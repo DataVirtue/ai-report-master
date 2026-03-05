@@ -18,10 +18,11 @@ class SemanticModelAnalyzer:
                 fk_count += 1
 
         return {
-            "numeric_columns_count": numeric_count,
+            "numeric_column_count": numeric_count,
             "date_column_count": date_count,
             "text_column_count": text_count,
             "foreign_key_column_count": fk_count,
+            "total_columns": len(columns),
         }
 
     def generate_table_stats(self, schema_dict: Dict) -> List:

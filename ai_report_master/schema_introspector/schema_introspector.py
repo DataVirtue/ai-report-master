@@ -24,7 +24,19 @@ SOURCE_DB_TYPE = os.getenv("SOURCE_DB_TYPE")
 
 class SchemaIntrospector:
     schema = "public"
-    ignore_table_containing = ["auth", "django", "migration", "historical", "counter"]
+    ignore_table_containing = [
+        "auth",
+        "django",
+        "migration",
+        "historical",
+        "counter",
+        "token",
+        "permissionsrole",
+        "importer",
+        "otp",
+        "machine",
+        "history",
+    ]
     ignore_table_exact = []
 
     def __init__(
@@ -80,7 +92,6 @@ class SchemaIntrospector:
             "decimal",
             "float",
             "numeric",
-            "bigint",
             "smallint",
             "double_precision",
             "real",
