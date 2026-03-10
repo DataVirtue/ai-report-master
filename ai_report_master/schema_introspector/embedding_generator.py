@@ -3,8 +3,8 @@ from sentence_transformers import SentenceTransformer
 
 
 class EmbeddingGenerator:
-    # default_model_name = "BAAI/bge-m3"
-    default_model_name = "BAAI/bge-small-en"
+    default_model_name = "BAAI/bge-m3"
+    # default_model_name = "BAAI/bge-small-en"
 
     def __init__(self, embedding_model=None) -> None:
         if embedding_model:
