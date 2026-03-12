@@ -7,6 +7,8 @@ from embedding_document_generator import EmbeddingDocumentGenerator
 from embedding_generator import EmbeddingGenerator
 from vector_store import FaissVectorStore
 from table_retriever import TableRetriever
+from context_builder import ContextBuilder
+from graph_expander import GraphExpander
 
 
 def main():
@@ -23,10 +25,13 @@ def main():
     embedding_generator = EmbeddingGenerator()
     vector_store = FaissVectorStore(embedding_generator.dimension())
     table_retriever = TableRetriever(embedding_generator, vector_store)
+
     schema_dict = introspector.get_schema()
     print(schema_dict["data"][100])
     schema_analysis = modelAnalyzer.generate_table_stats(schema_dict)
     relationship_graph = graphBuilder.build_graph(schema_dict["data"])
+
+    graph_expander = GraphExpander(relationship_graph)
     cluster = clusterDetector.get_clusters(relationship_graph)
     fact_table_analysis = factTableDetector.generate_role_hint(
         schema_analysis, relationship_graph
@@ -34,6 +39,12 @@ def main():
     embedding_documents = embedding_doc_generator.generate_embedding_documents(
         schema_dict["data"], fact_table_analysis
     )
+    embedding_docs_dict = {}
+    for doc in embedding_documents:
+        embedding_docs_dict[doc["table_name"]] = doc
+
+    context_builder = ContextBuilder(embedding_docs_dict)
+
     text_list = [doc["embedding_text"] for doc in embedding_documents]
 
     embedded_batch = embedding_generator.embed_batch(text_list)
@@ -71,7 +82,11 @@ def main():
     # search_vector = embedding_generator.embed_text(search_query_2)
     # print("*" * 100)
     # print(search_query_2, vector_store.search(search_vector))
-    print(table_retriever.retrieve_tables(search_query_1))
+    retrieved_tables = table_retriever.retrieve_tables(search_query_1)
+    print(retrieved_tables)
+    expanded_tables = graph_expander.expand_graph(retrieved_tables)
+    context = context_builder.get_context(search_query_1, expanded_tables)
+    print(context)
 
 
 if __name__ == "__main__":
