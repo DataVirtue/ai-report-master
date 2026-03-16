@@ -1,4 +1,6 @@
+import logging
 from schema_introspector import SchemaIntrospector
+from open_router_handler import OpenRouterHandler
 from semantic_model_analyzer import SemanticModelAnalyzer
 from relationship_graph_builder import RelationshipGraphBuilder
 from cluster_detector import ClusterDetector
@@ -9,6 +11,8 @@ from vector_store import FaissVectorStore
 from table_retriever import TableRetriever
 from context_builder import ContextBuilder
 from graph_expander import GraphExpander
+from sql_generator import SqlGenerator
+from docstring_generator import DocStringGenerator
 
 
 def main():
@@ -25,6 +29,8 @@ def main():
     embedding_generator = EmbeddingGenerator()
     vector_store = FaissVectorStore(embedding_generator.dimension())
     table_retriever = TableRetriever(embedding_generator, vector_store)
+    sql_generator = SqlGenerator()
+    docstring_generator = DocStringGenerator(OpenRouterHandler)
 
     schema_dict = introspector.get_schema()
     print(schema_dict["data"][100])
@@ -36,12 +42,15 @@ def main():
     fact_table_analysis = factTableDetector.generate_role_hint(
         schema_analysis, relationship_graph
     )
+    docstring_dict = docstring_generator.generate_doc_strings(schema_dict["data"])
     embedding_documents = embedding_doc_generator.generate_embedding_documents(
-        schema_dict["data"], fact_table_analysis
+        schema_dict["data"], fact_table_analysis, docstring_dict
     )
     embedding_docs_dict = {}
     for doc in embedding_documents:
         embedding_docs_dict[doc["table_name"]] = doc
+        print("==" * 100)
+        print("document", doc)
 
     context_builder = ContextBuilder(embedding_docs_dict)
 
@@ -82,12 +91,18 @@ def main():
     # search_vector = embedding_generator.embed_text(search_query_2)
     # print("*" * 100)
     # print(search_query_2, vector_store.search(search_vector))
-    retrieved_tables = table_retriever.retrieve_tables(search_query_1)
+    retrieved_tables = table_retriever.retrieve_tables(search_query_2)
     print(retrieved_tables)
     expanded_tables = graph_expander.expand_graph(retrieved_tables)
-    context = context_builder.get_context(search_query_1, expanded_tables)
-    print(context)
+    context = context_builder.get_context(search_query_2, expanded_tables)
+    sql = sql_generator.get_sql(context)
+    print(100 * "=")
+    print(sql)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+    logging.debug("Debug logging is enabled.")
     main()

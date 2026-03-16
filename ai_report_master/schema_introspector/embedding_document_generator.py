@@ -18,6 +18,7 @@ class EmbeddingDocument:
     fact_score: float
     columns: List[str]
     relationships: List[str]
+    doc_string: str
     statistics: TableStatistics
 
 
@@ -44,6 +45,9 @@ class EmbeddingDocumentGenerator:
     Relationships:
     {relationships_text}
 
+    Doc String:
+    {schema["doc_string"]}
+
     Statistics:
     - numeric columns: {stats["numeric_column_count"]}
     - foreign keys: {stats["foreign_key_column_count"]}
@@ -53,9 +57,7 @@ class EmbeddingDocumentGenerator:
     """.strip()
 
     def generate_embedding_documents(
-        self,
-        schema_data: List,
-        fact_table_analysis: Dict,
+        self, schema_data: List, fact_table_analysis: Dict, doc_string_dict: Dict
     ) -> List:
         results = []
         for table in schema_data:
@@ -82,6 +84,7 @@ class EmbeddingDocumentGenerator:
                 relationships=[
                     f"references {rel['table_name']}" for rel in relationships
                 ],
+                doc_string=doc_string_dict[table_name],
                 statistics=statistics,
             )
             embedding_text = self.render_embedding_text(asdict(embedding_document))
