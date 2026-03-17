@@ -11,6 +11,7 @@ load_dotenv()
 class OpenRouterHandler:
     def __init__(self) -> None:
         self.url = os.getenv("OPEN_ROUTER_URL")
+        self.embedding_url = os.getenv("OPEN_ROUTER_EMBEDDINGS_URL")
         self.api_key = os.getenv("OPEN_ROUTER_API_KEY")
         if self.url is None or self.api_key is None:
             raise Exception("Open routrer credentials not found")
@@ -33,3 +34,21 @@ class OpenRouterHandler:
 
         result = response.json()
         return result["choices"][0]["message"]["content"]
+
+    def get_embeddings(
+        self, input, llm_model="nvidia/llama-nemotron-embed-vl-1b-v2:free"
+    ):
+        if self.embedding_url is None or self.api_key is None:
+            raise Exception("Open routrer credentials not found")
+
+        data_input = input if isinstance(input, list) else [input]
+
+        data = {"model": llm_model, "input": data_input}
+
+        res = requests.post(self.embedding_url, headers=self.headers, json=data)
+        logging.debug(res)
+        payload = res.json()
+        logging.debug(type(res.json()["data"][0]["embedding"][0]))
+
+        embeddings = [item["embedding"] for item in payload["data"]]
+        return embeddings

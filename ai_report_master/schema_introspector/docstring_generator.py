@@ -51,8 +51,9 @@ class DocStringGenerator:
         Schema:
         """
 
-    def __init__(self, handler):
+    def __init__(self, handler, model_name="openai/o4-mini"):
         self.handler = handler()
+        self.model_name = model_name
 
     def clean_llm_json(self, text: str) -> str:
         text = text.strip()
@@ -82,7 +83,7 @@ class DocStringGenerator:
         for chunk in chunk_dict(schema_dict, 20):
             query = self.base_query + str(chunk)
 
-            response = self.handler.get_response(query)
+            response = self.handler.get_response(query, self.model_name)
 
             try:
                 cleaned_json = self.clean_llm_json(response)
@@ -94,15 +95,3 @@ class DocStringGenerator:
                 logging.debug(response)
 
         return results
-
-    # def generate_doc_strings(self, schema_dict: Dict):
-    #     query = self.query + str(schema_dict)
-    #
-    #     response = self.handler.get_response(query)
-    #     try:
-    #         return_dict = ast.literal_eval(response)
-    #         return return_dict
-    #     except (ValueError, SyntaxError) as e:
-    #         logging.debug(response)
-    #         logging.error(f"Incorrect LLM response{e}")
-    #         return {}

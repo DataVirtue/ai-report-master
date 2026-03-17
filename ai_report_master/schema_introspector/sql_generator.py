@@ -68,4 +68,4 @@ class SqlGenerator:
 
         SQL:
         """
-        return self.handler.get_response(prompt)
+        return self.handler.get_response(prompt, llm_model="openai/o4-mini")

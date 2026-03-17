@@ -82,9 +82,10 @@ class EmbeddingDocumentGenerator:
                 fact_score=fact_table_analysis[table_name]["normalized_fact_score"],
                 columns=[f"{col['name']} ({col['semantic_type']})" for col in columns],
                 relationships=[
-                    f"references {rel['table_name']}" for rel in relationships
+                    f"references {rel['table_name']} on column {rel['on_columns']} fk column {rel['fk_column']}"
+                    for rel in relationships
                 ],
-                doc_string=doc_string_dict[table_name],
+                doc_string=doc_string_dict.get(table_name, ""),
                 statistics=statistics,
             )
             embedding_text = self.render_embedding_text(asdict(embedding_document))
