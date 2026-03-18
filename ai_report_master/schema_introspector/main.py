@@ -18,7 +18,10 @@ from docstring_generator import DocStringGenerator
 def main():
     base_query = "Represent this query for retrieving relevant tables: "
     search_query_1 = base_query + "invoice series for sales"
-    search_query_2 = base_query + "top 10 distributors by sales amount"
+    search_query_2 = (
+        base_query
+        + "top 10 distributors by sales amount include both depot and local sale"
+    )
 
     introspector = SchemaIntrospector()
     modelAnalyzer = SemanticModelAnalyzer()
