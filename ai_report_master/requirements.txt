@@ -1,9 +1,33 @@
+aiofiles==25.1.0
+annotated-types==0.7.0
+# Editable install with no version control (antigravity-monitor==0.1.0)
+-e /home/akshay/antigravity-monitor
 asgiref==3.11.1
+click==8.3.1
 Django==6.0.2
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
 greenlet==3.3.2
+markdown-it-py==4.0.0
+mdurl==0.1.2
+networkx==3.6.1
 numpy==2.4.2
+packaging==26.0
+plyer==2.1.0
+psutil==7.2.1
 psycopg2-binary==2.9.11
+pydantic==2.12.5
+pydantic-settings==2.12.0
+pydantic_core==2.41.5
+Pygments==2.19.2
+PyJWT==2.12.1
 python-dotenv==1.2.2
+PyYAML==6.0.3
+rich==14.2.0
+setuptools==80.9.0
 SQLAlchemy==2.0.48
 sqlparse==0.5.5
+structlog==25.5.0
+typing-inspection==0.4.2
 typing_extensions==4.15.0
+wheel==0.45.1
