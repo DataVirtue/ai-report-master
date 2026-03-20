@@ -1,6 +1,6 @@
 import logging
 from schema_introspector import SchemaIntrospector
-from open_router_handler import OpenRouterHandler
+from ai.handlers.open_router_handler import OpenRouterHandler
 from semantic_model_analyzer import SemanticModelAnalyzer
 from relationship_graph_builder import RelationshipGraphBuilder
 from cluster_detector import ClusterDetector

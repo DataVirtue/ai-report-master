@@ -1,5 +1,5 @@
-from embedding_generator import EmbeddingGenerator
-from vector_store import FaissVectorStore
+from ..embeddings import EmbeddingGenerator
+from ..vector_store import FaissVectorStore
 from typing import List
 
 

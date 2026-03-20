@@ -1,25 +1,13 @@
 from typing import Dict, List
 from sqlalchemy import create_engine, inspect
-# from ai_report_master.settings import (
-#     SOURCE_DB_NAME,
-#     SOURCE_DB_HOST,
-#     SOURCE_DB_PASSWORD,
-#     SOURCE_DB_TYPE,
-#     SOURCE_DB_USER,
-# )
-#
-#
-
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-SOURCE_DB_NAME = os.getenv("SOURCE_DB_NAME")
-SOURCE_DB_USER = os.getenv("SOURCE_DB_USER")
-SOURCE_DB_PASSWORD = os.getenv("SOURCE_DB_PASSWORD")
-SOURCE_DB_HOST = os.getenv("SOURCE_DB_HOST")
-SOURCE_DB_PORT = os.getenv("SOURCE_DB_PORT")
-SOURCE_DB_TYPE = os.getenv("SOURCE_DB_TYPE")
+from backend.settings import (
+    SOURCE_DB_NAME,
+    SOURCE_DB_HOST,
+    SOURCE_DB_PASSWORD,
+    SOURCE_DB_TYPE,
+    SOURCE_DB_USER,
+    SOURCE_DB_PORT,
+)
 
 
 class SchemaIntrospector:

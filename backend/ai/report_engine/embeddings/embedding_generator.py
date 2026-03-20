@@ -1,7 +1,7 @@
 from typing import List
 import numpy
 from sentence_transformers import SentenceTransformer
-from open_router_handler import OpenRouterHandler
+from ai.handlers.open_router_handler import OpenRouterHandler
 
 
 class EmbeddingGenerator:

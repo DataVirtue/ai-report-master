@@ -31,6 +31,21 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Logging config
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}
 
 # Application definition
 
@@ -43,6 +58,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "users",
+    "ai",
 ]
 
 MIDDLEWARE = [
@@ -136,8 +152,9 @@ STATIC_URL = "static/"
 
 AUTH_USER_MODEL = "users.User"
 
-SOURCE_DB_NAME = os.getenv("gitsApp")
-SOURCE_DB_USER = os.getenv("postgres")
-SOURCE_DB_PASSWORD = os.getenv("postgres")
-SOURCE_DB_HOST = os.getenv("5432")
-SOURCE_DB_TYPE = os.getenv("postgresql")
+SOURCE_DB_NAME = os.getenv("SOURCE_DB_NAME")
+SOURCE_DB_USER = os.getenv("SOURCE_DB_USER")
+SOURCE_DB_PASSWORD = os.getenv("SOURCE_DB_PASSWORD")
+SOURCE_DB_HOST = os.getenv("SOURCE_DB_HOST")
+SOURCE_DB_PORT = os.getenv("SOURCE_DB_PORT")
+SOURCE_DB_TYPE = os.getenv("SOURCE_DB_TYPE")

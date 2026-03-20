@@ -1,4 +1,4 @@
-from open_router_handler import OpenRouterHandler
+from ai.handlers.open_router_handler import OpenRouterHandler
 
 
 class SqlGenerator:
