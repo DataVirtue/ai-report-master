@@ -1,13 +1,6 @@
 from typing import Dict, List
-from sqlalchemy import create_engine, inspect
-from backend.settings import (
-    SOURCE_DB_NAME,
-    SOURCE_DB_HOST,
-    SOURCE_DB_PASSWORD,
-    SOURCE_DB_TYPE,
-    SOURCE_DB_USER,
-    SOURCE_DB_PORT,
-)
+from sqlalchemy import inspect
+from db import DbEngine
 
 
 class SchemaIntrospector:
@@ -27,20 +20,9 @@ class SchemaIntrospector:
     ]
     ignore_table_exact = []
 
-    def __init__(
-        self,
-    ) -> None:
-        try:
-            self.engine = create_engine(
-                f"{SOURCE_DB_TYPE}://{SOURCE_DB_USER}:{SOURCE_DB_PASSWORD}@{SOURCE_DB_HOST}:{SOURCE_DB_PORT}/{SOURCE_DB_NAME}"
-            )
-            print(
-                f"{SOURCE_DB_TYPE}://{SOURCE_DB_USER}:{SOURCE_DB_PASSWORD}@{SOURCE_DB_HOST}/{SOURCE_DB_NAME}"
-            )
-            self.inspector = inspect(self.engine)
-            print("Connection Successful")
-        except Exception as e:
-            print(f"Db Connection failed {e}")
+    def __init__(self) -> None:
+        self.engine = DbEngine().engine
+        self.inspector = inspect(self.engine)
 
     def set_ignore_tables(self, table_name_list: List) -> None:
         self.ignore_table_exact = table_name_list

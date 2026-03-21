@@ -56,8 +56,9 @@ class SqlGenerator:
             <final SQL query>
                 """
 
-    def __init__(self) -> None:
-        self.handler = OpenRouterHandler()
+    def __init__(self, handler=OpenRouterHandler, model="openai/o4-mini") -> None:
+        self.handler = handler()
+        self.model = model
 
     def get_sql(self, context):
         prompt = f"""
@@ -68,4 +69,4 @@ class SqlGenerator:
 
         SQL:
         """
-        return self.handler.get_response(prompt, llm_model="openai/o4-mini")
+        return self.handler.get_response(prompt, self.model)

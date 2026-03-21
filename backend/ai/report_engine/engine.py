@@ -1,4 +1,3 @@
-import logging
 from .schema_explorer import (
     SchemaIntrospector,
     SemanticModelAnalyzer,
@@ -7,12 +6,18 @@ from .schema_explorer import (
 from .graph import RelationshipGraphBuilder, GraphExpander
 from .embeddings import EmbeddingDocumentGenerator, EmbeddingGeneratorWithOpenRouter
 from .vector_store import FaissVectorStore
-from .query_generation import TableRetriever, SqlGenerator
+from .query_generation import (
+    TableRetriever,
+    SqlGenerator,
+    QueryExecutor,
+    QueryValidator,
+)
 from .context import ContextBuilder
 from .embeddings import DocStringGenerator
 from ai.handlers.open_router_handler import OpenRouterHandler
-
+from db import DbEngine
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +40,14 @@ class ReportEngine:
         self.embedding_generator = EmbeddingGeneratorWithOpenRouter(
             embedding_model="openai/text-embedding-3-large"
         )
-        self.sql_generator = SqlGenerator()
+        self.sql_generator = SqlGenerator(OpenRouterHandler, "openai/o4-mini")
         self.docstring_generator = DocStringGenerator(
             OpenRouterHandler, "openai/o4-mini"
+        )
+        db_engine = DbEngine().engine
+        query_validator = QueryValidator(["select"])
+        self.query_exector = QueryExecutor(
+            db_engine=db_engine, query_validator=query_validator
         )
 
         logging.info("Collecting Schema Data")
@@ -71,6 +81,14 @@ class ReportEngine:
         )
         self.vector_store.add_batch(embedded_batch, embedding_documents)
         logging.info("Class Initiation Succesful")
+
+    def get_report_data(self, search_query, top_k=10):
+        retrieved_tables = self.table_retriever.retrieve_tables(search_query, top_k)
+        expanded_tables = self.graph_expander.expand_graph(retrieved_tables)
+        context = self.context_builder.get_context(search_query, expanded_tables)
+        sql = self.sql_generator.get_sql(context)
+        data = self.query_exector.execute_query(search_query)
+        return data
 
 
 engine = ReportEngine()

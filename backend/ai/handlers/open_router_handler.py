@@ -35,6 +35,25 @@ class OpenRouterHandler:
         result = response.json()
         return result["choices"][0]["message"]["content"]
 
+    def get_response_with_message_list(
+        self, messages, llm_model="openrouter/hunter-alpha"
+    ):
+        if self.url is None or self.headers is None:
+            raise Exception("Open routrer credentials not found")
+        logging.debug("sending request to llm")
+        response = requests.post(
+            url=self.url,
+            headers=self.headers,
+            json={
+                "model": llm_model,  # Optional
+                "messages": messages,
+            },
+        )
+
+        result = response.json()
+        print(result)
+        return result["choices"][0]["message"]["content"]
+
     def get_embeddings(
         self, input, llm_model="nvidia/llama-nemotron-embed-vl-1b-v2:free"
     ):
