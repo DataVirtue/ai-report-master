@@ -87,7 +87,7 @@ class ReportEngine:
         expanded_tables = self.graph_expander.expand_graph(retrieved_tables)
         context = self.context_builder.get_context(search_query, expanded_tables)
         sql = self.sql_generator.get_sql(context)
-        data = self.query_exector.execute_query(search_query)
+        data = self.query_exector.execute_query(sql)
         return data
 
 

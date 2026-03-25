@@ -9,7 +9,7 @@ class QueryExecutor:
         self.query_validator = query_validator
 
     def execute_query(self, query):
-        is_valid, reason = self.query_validator.is_query_valid(query)
+        is_valid, reason = self.query_validator.validate_query(query)
         if not is_valid:
             return {}, False, reason
 

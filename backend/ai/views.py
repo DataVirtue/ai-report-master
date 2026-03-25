@@ -1,5 +1,4 @@
 import json
-from ai.services import chat_service
 from django.shortcuts import render
 from rest_framework.response import Response
 from .services import ChatService, ReportGenerationService
@@ -8,9 +7,6 @@ from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 
 
-# Create your views here.
-#
-#
 #
 @method_decorator(csrf_exempt, name="dispatch")
 class ChatView(APIView):

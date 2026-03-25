@@ -1,4 +1,5 @@
 from ai.handlers.open_router_handler import OpenRouterHandler
+import re
 
 
 class SqlGenerator:
@@ -60,6 +61,14 @@ class SqlGenerator:
         self.handler = handler()
         self.model = model
 
+    def extract_sql(self, text):
+        if "SQL:" in text:
+            sql = text.split("SQL:")[1].strip()
+            # Remove ```sql ... ``` or ``` ... ```
+            sql = re.sub(r"```(?:sql)?\s*(.*?)```", r"\1", sql, flags=re.DOTALL)
+            return sql.strip()
+        return text
+
     def get_sql(self, context):
         prompt = f"""
             {self.base_prompt}
@@ -69,4 +78,5 @@ class SqlGenerator:
 
         SQL:
         """
-        return self.handler.get_response(prompt, self.model)
+        response = self.handler.get_response(prompt, self.model)
+        return self.extract_sql(response)

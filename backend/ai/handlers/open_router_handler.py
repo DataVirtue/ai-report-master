@@ -36,7 +36,7 @@ class OpenRouterHandler:
         return result["choices"][0]["message"]["content"]
 
     def get_response_with_message_list(
-        self, messages, llm_model="openrouter/hunter-alpha"
+        self, messages, llm_model="openrouter/hunter-alpha", return_json=False
     ):
         if self.url is None or self.headers is None:
             raise Exception("Open routrer credentials not found")
@@ -47,12 +47,24 @@ class OpenRouterHandler:
             json={
                 "model": llm_model,  # Optional
                 "messages": messages,
+                **({"response_format": {"type": "json_object"}} if return_json else {}),
             },
         )
 
         result = response.json()
         print(result)
-        return result["choices"][0]["message"]["content"]
+
+        if "error" in result:
+            raise Exception(result["error"])
+
+        if "choices" in result:
+            return result["choices"][0]["message"]["content"]
+
+        # fallback (some providers use different format)
+        if "output" in result:
+            return result["output"]
+
+        raise Exception(f"Unexpected LLM response: {result}")
 
     def get_embeddings(
         self, input, llm_model="nvidia/llama-nemotron-embed-vl-1b-v2:free"
