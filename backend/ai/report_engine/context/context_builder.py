@@ -1,8 +1,11 @@
+from typing import Dict
+
+
 class ContextBuilder:
     def __init__(self, embedding_document_dict) -> None:
         self.document_dict = embedding_document_dict
 
-    def get_context(self, query, expanded_tables):
+    def get_context(self, query, expanded_tables) -> Dict:
         context = {}
         context["query"] = query
         context["tables"] = expanded_tables

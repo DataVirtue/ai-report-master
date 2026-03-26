@@ -1,5 +1,4 @@
 import requests
-import json
 from dotenv import load_dotenv
 import os
 import logging
@@ -36,7 +35,11 @@ class OpenRouterHandler:
         return result["choices"][0]["message"]["content"]
 
     def get_response_with_message_list(
-        self, messages, llm_model="openrouter/hunter-alpha", return_json=False
+        self,
+        messages,
+        llm_model="openrouter/hunter-alpha",
+        return_json=False,
+        tools=None,
     ):
         if self.url is None or self.headers is None:
             raise Exception("Open routrer credentials not found")
@@ -48,6 +51,7 @@ class OpenRouterHandler:
                 "model": llm_model,  # Optional
                 "messages": messages,
                 **({"response_format": {"type": "json_object"}} if return_json else {}),
+                **({"tools": tools} if tools else {}),
             },
         )
 
@@ -58,7 +62,7 @@ class OpenRouterHandler:
             raise Exception(result["error"])
 
         if "choices" in result:
-            return result["choices"][0]["message"]["content"]
+            return result["choices"][0]["message"]
 
         # fallback (some providers use different format)
         if "output" in result:

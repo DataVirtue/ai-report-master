@@ -1,6 +1,6 @@
-from .views import ChatView
+from .views import StreamChatView
 from django.urls import path
 
 urlpatterns = [
-    path("api/chat/", ChatView.as_view()),
+    path("api/chat/", StreamChatView.as_view()),
 ]

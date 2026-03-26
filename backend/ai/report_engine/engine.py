@@ -17,7 +17,7 @@ from .embeddings import DocStringGenerator
 from ai.handlers.open_router_handler import OpenRouterHandler
 from db import DbEngine
 import logging
-
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -82,13 +82,29 @@ class ReportEngine:
         self.vector_store.add_batch(embedded_batch, embedding_documents)
         logging.info("Class Initiation Succesful")
 
-    def get_report_data(self, search_query, top_k=10):
+    def get_report_data(self, search_query, top_k=10) -> Tuple[Dict, bool, str]:
         retrieved_tables = self.table_retriever.retrieve_tables(search_query, top_k)
         expanded_tables = self.graph_expander.expand_graph(retrieved_tables)
         context = self.context_builder.get_context(search_query, expanded_tables)
         sql = self.sql_generator.get_sql(context)
         data = self.query_exector.execute_query(sql)
         return data
+
+    def get_schema_context(self, search_query, top_k=10):
+        retrieved_tables = self.table_retriever.retrieve_tables(search_query, top_k)
+        expanded_tables = self.graph_expander.expand_graph(retrieved_tables)
+        context = self.context_builder.get_context(search_query, expanded_tables)
+        return context
+
+    def run_sql(self, sql) -> Dict:
+        data, is_success, reason = self.query_exector.execute_query(
+            sql
+        )  # also does validation
+        return {
+            "data": data,
+            "error": reason,
+            "status": "Success" if is_success else "Error",
+        }
 
 
 engine = ReportEngine()

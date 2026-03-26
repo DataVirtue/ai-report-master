@@ -1,23 +1,26 @@
 import json
-from django.shortcuts import render
-from rest_framework.response import Response
-from .services import ChatService, ReportGenerationService
+from .services import ChatService
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from rest_framework.views import APIView
+from django.views import View
+from django.http import StreamingHttpResponse
 
 
-#
 @method_decorator(csrf_exempt, name="dispatch")
-class ChatView(APIView):
-    chat_service = ChatService(model="openai/o4-mini")
+class StreamChatView(View):
+    def dispatch(self, request, *args, **kwargs):
+        self.service = ChatService(model="openai/o4-mini")
+        return super().dispatch(request, *args, **kwargs)
 
-    def post(self, request):
-        messages = request.data.get("messages")
-        response = self.chat_service.send_messages(messages)
+    def get(self, request):
+        messages = json.loads(request.GET.get("messages", "[]"))
 
-        return Response(
-            {
-                "message": response,
-            }
+        response = StreamingHttpResponse(
+            self.stream(messages), content_type="text/event-stream"
         )
+
+        response["Cache-Control"] = "no-cache"
+        return response
+
+    def stream(self, messages):
+        yield from self.service.stream_messages(messages)

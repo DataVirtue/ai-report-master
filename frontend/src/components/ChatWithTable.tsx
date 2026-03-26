@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@/lib/chat";
-import { send_messages } from "@/lib/chat";
 
 
 type TableRow = {
@@ -13,39 +12,64 @@ type TableRow = {
   result: string;
 };
 
+const API_BASE_URL = import.meta.env.VITE_API_URL
+
+
 export default function ChatWithTable() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [tableData, setTableData] = useState<TableRow[]>([]);
+  const [status, setStatus] = useState<string>("");
 
-  const handleSend = async (): Promise<any> => {
+  const handleSend = () => {
     if (!input.trim()) return;
 
     const userMessage: Message = { role: "user", content: input };
 
-    const newRow: TableRow = {
-      id: tableData.length + 1,
-      query: input,
-      result: "Generated",
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+
+    setInput("");
+    setStatus("Starting...");
+
+    const eventSource = new EventSource(
+      `${API_BASE_URL}/ai/api/chat?messages=${encodeURIComponent(JSON.stringify(updatedMessages))}`
+    );
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      // 🔹 STATUS UPDATES
+      if (data.type === "status") {
+        setStatus(data.data);
+      }
+
+      // 🔹 FINAL MESSAGE
+      if (data.type === "message") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.data,
+          },
+        ]);
+
+        setStatus("");
+        eventSource.close();
+      }
+
+      // 🔹 OPTIONAL: TABLE DATA
+      if (data.type === "result") {
+        setTableData(data.data);
+      }
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    const res = await send_messages(messages)
-    console.log(res)
-    const botResponse: Message = {
-      role: "assistant",
-      content: res.message
-    }
-    console.log("res data", res.data)
-    setMessages((prev) => [...prev, botResponse]);
-
-
-    setTableData((prev) => [...prev, newRow]);
-    setInput("");
-
+    eventSource.onerror = () => {
+      eventSource.close();
+      setStatus("Something went wrong");
+    };
   };
-
   return (
     <div className="grid grid-cols-3 gap-4 h-screen p-4 ">
       {/* Chat Section */}
@@ -68,6 +92,11 @@ export default function ChatWithTable() {
           </ScrollArea>
 
           <div className="flex gap-2">
+            {status && (
+              <div className="text-sm text-gray-500 mb-2">
+                {status}
+              </div>
+            )}
             <Input
               value={input}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>

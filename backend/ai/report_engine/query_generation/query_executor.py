@@ -1,4 +1,5 @@
 import logging
+from typing import Dict, Tuple
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
@@ -8,7 +9,7 @@ class QueryExecutor:
         self.db_engine = db_engine
         self.query_validator = query_validator
 
-    def execute_query(self, query):
+    def execute_query(self, query) -> Tuple[Dict, bool, str]:
         is_valid, reason = self.query_validator.validate_query(query)
         if not is_valid:
             return {}, False, reason
@@ -31,3 +32,5 @@ class QueryExecutor:
             except DBAPIError as e:
                 logging.error(f"Could not execute query {e}")
                 return {}, False, f"Query Failed with error {e}"
+
+        return {}, False, "Unknown error"
