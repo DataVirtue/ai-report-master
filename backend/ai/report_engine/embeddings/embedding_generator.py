@@ -2,6 +2,7 @@ from typing import List
 import numpy
 from sentence_transformers import SentenceTransformer
 from ai.handlers.open_router_handler import OpenRouterHandler
+import logging
 
 
 class EmbeddingGenerator:
@@ -33,7 +34,9 @@ class EmbeddingGeneratorWithOpenRouter(EmbeddingGenerator):
         self.dim = None
 
     def embed_text(self, text: str) -> numpy.ndarray:
-        embedding = self.routing_handler.get_embeddings(text, self.model)
+        embedding = self.routing_handler.get_embeddings(
+            text, self.model, embedding_dimension=1532
+        )
         if not self.dim:
             self.dim = len(embedding[0])
         return embedding[0]
@@ -44,12 +47,16 @@ class EmbeddingGeneratorWithOpenRouter(EmbeddingGenerator):
                 yield lst[i : i + size]
 
         all_embeddings = []
-
-        for batch in chunk_list(texts, size=20):
+        count = 0
+        total = len(texts)
+        size = 5
+        for batch in chunk_list(texts, size):
+            logging.info(f"{count} of {total} embedding completed")
             embedding = self.routing_handler.get_embeddings(batch, self.model)
             all_embeddings.extend(embedding)
             if not self.dim:
                 self.dim = len(embedding[0])
+            count += size
 
         return numpy.vstack(all_embeddings).astype("float32")
 

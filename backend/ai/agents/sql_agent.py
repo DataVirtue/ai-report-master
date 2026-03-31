@@ -29,6 +29,20 @@ class SQLAgent:
                     },
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "run_sql",
+                    "description": "Execute SQL query and return results",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "sql": {"type": "string"},
+                        },
+                        "required": ["sql"],
+                    },
+                },
+            },
         ]
 
     def handle_tool_call(self, tool_call):
@@ -37,3 +51,5 @@ class SQLAgent:
 
         if name == "get_schema_context":
             return self.report_engine.get_schema_context(**args)
+        elif name == "run_sql":
+            return self.report_engine.run_sql(**args)

@@ -6,11 +6,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@/lib/chat";
 
 
-type TableRow = {
-  id: number;
-  query: string;
-  result: string;
-};
+
+type TableRow = Record<string, any>;
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
 
@@ -60,8 +58,15 @@ export default function ChatWithTable() {
       }
 
       // 🔹 OPTIONAL: TABLE DATA
-      if (data.type === "result") {
-        setTableData(data.data);
+      if (data.type === "data") {
+
+        console.log(data.data.rows)
+        if (Array.isArray(data.data.rows)) {
+          setTableData(data.data.rows);
+        } else {
+          console.warn("Invalid rows:", data.data.rows);
+        }
+        setStatus(data.data.error);
       }
     };
 
@@ -70,6 +75,10 @@ export default function ChatWithTable() {
       setStatus("Something went wrong");
     };
   };
+  const columns =
+    Array.isArray(tableData) && tableData.length > 0
+      ? Object.keys(tableData[0])
+      : [];
   return (
     <div className="grid grid-cols-3 gap-4 h-screen p-4 ">
       {/* Chat Section */}
@@ -113,25 +122,34 @@ export default function ChatWithTable() {
       </Card>
 
       {/* Table Section */}
+
       <Card className="flex flex-col">
+
+
         <CardContent className="p-4 overflow-auto">
           <h2 className="text-lg font-semibold mb-3">Live Data</h2>
           <table className="w-full text-sm border">
             <thead>
               <tr className="border-b">
-                <th className="text-left p-2">#</th>
-                <th className="text-left p-2">Query</th>
-                <th className="text-left p-2">Result</th>
+                {columns.map((col) => (
+                  <th key={col} className="text-left p-2">
+                    {col}
+                  </th>
+                ))}
               </tr>
             </thead>
+
             <tbody>
-              {tableData.map((row) => (
-                <tr key={row.id} className="border-b">
-                  <td className="p-2">{row.id}</td>
-                  <td className="p-2">{row.query}</td>
-                  <td className="p-2">{row.result}</td>
-                </tr>
-              ))}
+              {Array.isArray(tableData) &&
+                tableData.map((row, i) => (
+                  <tr key={i} className="border-b">
+                    {columns.map((col) => (
+                      <td key={col} className="p-2">
+                        {String(row[col] ?? "")}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
             </tbody>
           </table>
         </CardContent>

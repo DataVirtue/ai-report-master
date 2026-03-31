@@ -71,7 +71,10 @@ class OpenRouterHandler:
         raise Exception(f"Unexpected LLM response: {result}")
 
     def get_embeddings(
-        self, input, llm_model="nvidia/llama-nemotron-embed-vl-1b-v2:free"
+        self,
+        input,
+        llm_model="nvidia/llama-nemotron-embed-vl-1b-v2:free",
+        embedding_dimension=1532,
     ):
         if self.embedding_url is None or self.api_key is None:
             raise Exception("Open routrer credentials not found")
@@ -79,7 +82,8 @@ class OpenRouterHandler:
         data_input = input if isinstance(input, list) else [input]
 
         data = {"model": llm_model, "input": data_input}
-
+        if "openai" in llm_model:
+            data["dimensions"] = embedding_dimension
         res = requests.post(self.embedding_url, headers=self.headers, json=data)
         logging.debug(res)
         payload = res.json()

@@ -1,3 +1,4 @@
+from ai.models import Embedding
 from .schema_explorer import (
     SchemaIntrospector,
     SemanticModelAnalyzer,
@@ -5,7 +6,7 @@ from .schema_explorer import (
 )
 from .graph import RelationshipGraphBuilder, GraphExpander
 from .embeddings import EmbeddingDocumentGenerator, EmbeddingGeneratorWithOpenRouter
-from .vector_store import FaissVectorStore
+from .vector_store import PgVectorStore
 from .query_generation import (
     TableRetriever,
     SqlGenerator,
@@ -60,26 +61,36 @@ class ReportEngine:
         fact_table_analysis = self.factTableDetector.generate_role_hint(
             schema_analysis, relationship_graph
         )
-        # docstring_dict = docstring_generator.generate_doc_strings(schema_dict["data"])
-        embedding_documents = self.embedding_doc_generator.generate_embedding_documents(
-            schema_dict["data"], fact_table_analysis, {}
-        )
-        self.embedding_docs_dict = {}
-        for doc in embedding_documents:
-            self.embedding_docs_dict[doc["table_name"]] = doc
 
-        self.context_builder = ContextBuilder(self.embedding_docs_dict)
+        self.vector_store = PgVectorStore()
+        if not self.vector_store.is_store_built():
+            # docstring_dict = docstring_generator.generate_doc_strings(schema_dict["data"])
+            embedding_documents = (
+                self.embedding_doc_generator.generate_embedding_documents(
+                    schema_dict["data"], fact_table_analysis, {}
+                )
+            )
+            self.embedding_docs_dict = {}
+            for doc in embedding_documents:
+                self.embedding_docs_dict[doc["table_name"]] = doc
 
-        text_list = [doc["embedding_text"] for doc in embedding_documents]
+            self.context_builder = ContextBuilder(self.embedding_docs_dict)
 
-        logging.info("Generating Embeddings")
-        embedded_batch = self.embedding_generator.embed_batch(text_list)
+            text_list = [doc["embedding_text"] for doc in embedding_documents]
 
-        self.vector_store = FaissVectorStore(len(embedded_batch[0]))
+            logging.info("Generating Embeddings")
+            embedded_batch = self.embedding_generator.embed_batch(text_list)
+
+            self.vector_store.add_batch(embedded_batch, embedding_documents)
+        else:
+            qs = Embedding.objects.all()
+            self.embedding_docs_dict = {
+                em.content["table_name"]: em.content for em in qs
+            }
+            self.context_builder = ContextBuilder(self.embedding_docs_dict)
         self.table_retriever = TableRetriever(
             self.embedding_generator, self.vector_store
         )
-        self.vector_store.add_batch(embedded_batch, embedding_documents)
         logging.info("Class Initiation Succesful")
 
     def get_report_data(self, search_query, top_k=10) -> Tuple[Dict, bool, str]:

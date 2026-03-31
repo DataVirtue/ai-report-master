@@ -3,16 +3,40 @@ from .report_generation_service import ReportGenerationService
 from ai.agents import SQLAgent
 import json
 import logging
+from decimal import Decimal
 
 
 class ChatService:
     system_prompt = """
-        You are a report assitant 
-        when the user asks to generate report clarify the requirement as necessary 
-        and when you are ready generate a 
-        proper prompt for an ai sql engine to generate the relevant report output format:
-        Assume the user is not technical and relevant schema details will be provided to the sql engine
+    You are an AI reporting assistant that helps users generate reports from a database.
 
+    The user is non-technical. Always keep explanations simple and clear.
+
+    You have access to the following tools:
+    1. get_schema_context → to discover relevant tables and columns
+    2. run_sql → to execute SQL queries and retrieve data
+
+    WORKFLOW:
+    1. Understand the user request
+    2. If requirements are unclear → ask clarifying questions
+    3. Use get_schema_context to find relevant tables
+    4. Generate a correct SQL query
+    5. Call run_sql to execute the query
+    6. Once results are available:
+    - Summarize insights clearly
+    - Do NOT include raw data in your response
+    - Focus on key findings
+
+    IMPORTANT RULES:
+    - NEVER assume table or column names → always use get_schema_context first
+    - ALWAYS use tools for database-related questions
+    - NEVER generate fake data
+    - Keep SQL efficient (use LIMIT if needed)
+    - If SQL fails, fix and retry
+
+    RESPONSE STYLE:
+    - Clear, concise, non-technical
+    - Explain what the data means, not how SQL works
     """
 
     def __init__(
@@ -23,6 +47,11 @@ class ChatService:
         self.report_service = ReportGenerationService()
         self.sql_agent = SQLAgent(self.report_service.report_engine)
         self.tools = self.sql_agent.get_tools()
+
+    def decimal_default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        raise TypeError(f"Type {type(obj)} not serializable")
 
     def clean_llm_json(self, text: str) -> str:
         text = text.strip()
@@ -43,7 +72,7 @@ class ChatService:
         return text.strip()
 
     def _event(self, type_, data):
-        return f"data: {json.dumps({'type': type_, 'data': data})}\n\n"
+        return f"data: {json.dumps({'type': type_, 'data': data}, default=self.decimal_default)}\n\n"
 
     def stream_messages(self, messages):
         messages.append({"role": "system", "content": self.system_prompt})
@@ -54,38 +83,105 @@ class ChatService:
         response = self.handler.get_response_with_message_list(
             messages, self.model, tools=self.tools
         )
+        messages.append(
+            {
+                "role": "assistant",
+                "content": response.get("content"),
+                "tool_calls": response.get("tool_calls", []),
+            }
+        )
 
         yield self._event("status", "Analyzing...")
-
+        sql_success = False
+        current_row_count = 0
         while True:
             # 🔹 TOOL CALL HANDLING
-            if "tool_calls" in response:
+            #
+            tool_calls = response.get("tool_calls") or []
+            if tool_calls:
                 yield self._event("status", "Fetching schema...")
 
-                for call in response["tool_calls"]:
+                for call in tool_calls:
+                    tool_name = call["function"]["name"]
                     tool_result = self.sql_agent.handle_tool_call(call)
-
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "tool_name": call["function"]["name"],
-                            "content": json.dumps(tool_result),
-                        }
-                    )
-
+                    if tool_name == "run_sql":
+                        if isinstance(tool_result, dict) and tool_result.get("error"):
+                            yield self._event(
+                                "data",
+                                {
+                                    "rows": [],
+                                    "error": tool_result["error"],
+                                },
+                            )
+                        elif isinstance(tool_result, dict):
+                            sql_success = True
+                            yield self._event(
+                                "data",
+                                {
+                                    "rows": tool_result.get("data"),
+                                    "error": None,
+                                },
+                            )
+                        if isinstance(tool_result, list):
+                            row_count = len(tool_result)
+                            current_row_count = row_count
+                        else:
+                            row_count = 0
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "name": tool_name,
+                                "tool_call_id": call["id"],
+                                "content": json.dumps(
+                                    {
+                                        "status": "success",
+                                        "row_count": current_row_count,
+                                    }
+                                ),
+                            }
+                        )
+                    else:
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "name": call["function"]["name"],
+                                "tool_call_id": call["id"],
+                                "content": json.dumps(tool_result),
+                            }
+                        )
                 yield self._event("status", "Generating SQL...")
+                print(messages)
 
                 # Call LLM again with tool results
                 response = self.handler.get_response_with_message_list(
-                    messages, self.model, tools=self.tools
+                    messages, self.model, tools=self.tools if not sql_success else []
+                )
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": response.get("content"),
+                        "tool_calls": response.get("tool_calls", []),
+                    }
                 )
 
-                continue
+                if sql_success:
+                    # Force final summarization call WITHOUT tools
 
-            # 🔹 FINAL RESPONSE
-            content = response.get("content")
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": "The SQL query has already been executed successfully. Do not call any tools. Provide a clear summary of the results.",
+                        }
+                    )
+                    final_response = self.handler.get_response_with_message_list(
+                        messages,
+                        self.model,
+                        tools=[],  # IMPORTANT: disable tools
+                    )
 
-            if content:
-                yield self._event("message", content)
+                    content = final_response.get("content")
 
-            break
+                    if content:
+                        yield self._event("message", content)
+
+                    break

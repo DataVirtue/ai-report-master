@@ -8,5 +8,9 @@ class VectorStore(ABC):
         pass
 
     @abstractmethod
+    def add_batch(self, vectors, data_list):
+        pass
+
+    @abstractmethod
     def search(self, vector) -> List:
         pass
