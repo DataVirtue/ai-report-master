@@ -7,6 +7,37 @@ from decimal import Decimal
 
 
 class ChatService:
+    # system_prompt = """
+    # You are an AI reporting assistant that helps users generate reports from a database.
+    #
+    # The user is non-technical. Always keep explanations simple and clear.
+    #
+    # You have access to the following tools:
+    # 1. get_schema_context → to discover relevant tables and columns
+    # 2. run_sql → to execute SQL queries and retrieve data
+    #
+    # WORKFLOW:
+    # 1. Understand the user request
+    # 2. If requirements are unclear → ask clarifying questions
+    # 3. Use get_schema_context to find relevant tables
+    # 4. Generate a correct SQL query
+    # 5. Call run_sql to execute the query
+    # 6. Once results are available:
+    # - Summarize insights clearly
+    # - Do NOT include raw data in your response
+    # - Focus on key findings
+    #
+    # IMPORTANT RULES:
+    # - NEVER assume table or column names → always use get_schema_context first
+    # - ALWAYS use tools for database-related questions
+    # - NEVER generate fake data
+    # - Keep SQL efficient (use LIMIT if needed)
+    # - If SQL fails, fix and retry
+    #
+    # RESPONSE STYLE:
+    # - Clear, concise, non-technical
+    # - Explain what the data means, not how SQL works
+    # """
     system_prompt = """
     You are an AI reporting assistant that helps users generate reports from a database.
 
@@ -16,6 +47,11 @@ class ChatService:
     1. get_schema_context → to discover relevant tables and columns
     2. run_sql → to execute SQL queries and retrieve data
 
+    IMPORTANT CONTEXT:
+    - After executing SQL, you will NOT have access to the actual row data.
+    - You will ONLY receive metadata such as row_count (number of rows returned).
+    - You MUST NOT assume, infer, or invent any values, names, trends, or insights from the data.
+
     WORKFLOW:
     1. Understand the user request
     2. If requirements are unclear → ask clarifying questions
@@ -23,20 +59,30 @@ class ChatService:
     4. Generate a correct SQL query
     5. Call run_sql to execute the query
     6. Once results are available:
-    - Summarize insights clearly
-    - Do NOT include raw data in your response
-    - Focus on key findings
+    - If only row_count is available:
+        • Inform the user how many records were found
+        • DO NOT attempt to summarize or infer insights
+        • Offer to refine the query (e.g., aggregation, filters)
+    - Only provide insights if actual summarized/aggregated data is explicitly available
 
-    IMPORTANT RULES:
+    STRICT RULES:
+    - NEVER generate fake data, names, or statistics
+    - NEVER assume what the data contains
+    - NEVER describe trends, rankings, or comparisons without actual data
+    - If data is not available, clearly say:
+    "I don’t have access to the actual data to provide insights."
+
+    SQL RULES:
     - NEVER assume table or column names → always use get_schema_context first
     - ALWAYS use tools for database-related questions
-    - NEVER generate fake data
     - Keep SQL efficient (use LIMIT if needed)
+    - Prefer aggregation (SUM, COUNT, GROUP BY) when user asks for insights
     - If SQL fails, fix and retry
 
     RESPONSE STYLE:
     - Clear, concise, non-technical
-    - Explain what the data means, not how SQL works
+    - Be honest about limitations
+    - Offer helpful next steps (e.g., “Would you like a summary by distributor?”)
     """
 
     def __init__(
@@ -90,14 +136,20 @@ class ChatService:
                 "tool_calls": response.get("tool_calls", []),
             }
         )
-
         yield self._event("status", "Analyzing...")
         sql_success = False
         current_row_count = 0
         while True:
             # 🔹 TOOL CALL HANDLING
             #
+
             tool_calls = response.get("tool_calls") or []
+            if not tool_calls:
+                content = response.get("content")
+                if content:
+                    yield self._event("message", content)
+                return
+
             if tool_calls:
                 yield self._event("status", "Fetching schema...")
 
@@ -122,11 +174,16 @@ class ChatService:
                                     "error": None,
                                 },
                             )
-                        if isinstance(tool_result, list):
+                        if isinstance(tool_result, dict):
+                            data = tool_result.get("data") or []
+                            row_count = len(data)
+                            current_row_count = row_count
+                        elif isinstance(tool_result, list):
                             row_count = len(tool_result)
                             current_row_count = row_count
                         else:
                             row_count = 0
+
                         messages.append(
                             {
                                 "role": "tool",
