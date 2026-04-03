@@ -43,10 +43,16 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <Card className="w-[350px] shadow-lg">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
+    <div className="flex min-h-[calc(100vh-100px)] items-center justify-center p-4 relative overflow-hidden bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+      
+      <Card className="w-[400px] glass-card border-none rounded-2xl overflow-hidden relative z-10 transition-all duration-500 hover:shadow-cyan-600/10">
+        <CardHeader className="space-y-1 pb-8">
+          <CardTitle className="text-4xl font-extrabold tracking-tight text-center text-cyan-600 dark:text-cyan-400">
+            Welcome Back
+          </CardTitle>
+          <p className="text-center text-sm text-foreground/60 mt-2">
+            Enter your credentials to continue
+          </p>
         </CardHeader>
 
         <CardContent>
@@ -54,29 +60,46 @@ export default function LoginForm() {
             action={async (formData) => {
               await handleLogin(formData)
             }}
-            className="space-y-4"
+            className="space-y-5"
           >
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input name="username" placeholder="Enter username" required />
+            <div className="space-y-2 group">
+              <Label htmlFor="username" className="text-sm font-medium text-foreground/80 group-focus-within:text-cyan-600 transition-colors">Username</Label>
+              <Input 
+                name="username" 
+                placeholder="Enter username" 
+                required 
+                className="rounded-xl bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus-visible:ring-cyan-500 focus-visible:ring-offset-0 transition-all shadow-sm h-11"
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="space-y-2 group">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground/80 group-focus-within:text-cyan-600 transition-colors">Password</Label>
               <Input
                 name="password"
                 type="password"
-                placeholder="Enter password"
+                placeholder="••••••••"
                 required
+                className="rounded-xl bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus-visible:ring-cyan-500 focus-visible:ring-offset-0 transition-all shadow-sm h-11"
               />
             </div>
 
             {error && (
-              <p className="text-sm text-red-500">{error}</p>
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <p className="text-sm text-red-600 dark:text-red-400 text-center font-medium">{error}</p>
+              </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+            <Button 
+              type="submit" 
+              className="w-full h-11 bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-cyan-600 dark:hover:bg-cyan-500 rounded-xl shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 text-md font-semibold mt-6" 
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
+                  Logging in...
+                </span>
+              ) : "Sign In"}
             </Button>
           </form>
         </CardContent>
