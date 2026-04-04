@@ -20,6 +20,8 @@ from db import DbEngine
 import logging
 from typing import Dict, Tuple
 
+from ai.report_engine import vector_store
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,6 +32,23 @@ class ReportEngine:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
+
+    def build_vector_store(self):
+        embedding_documents = self.embedding_doc_generator.generate_embedding_documents(
+            self.schema_dict["data"], self.fact_table_analysis, {}
+        )
+        self.embedding_docs_dict = {}
+        for doc in embedding_documents:
+            self.embedding_docs_dict[doc["table_name"]] = doc
+
+        self.context_builder = ContextBuilder(self.embedding_docs_dict)
+
+        text_list = [doc["embedding_text"] for doc in embedding_documents]
+
+        logging.info("Generating Embeddings")
+        embedded_batch = self.embedding_generator.embed_batch(text_list)
+
+        self.vector_store.add_batch(embedded_batch, embedding_documents)
 
     def __init__(self) -> None:
         logging.info("Creating Report engine class")
@@ -52,42 +71,23 @@ class ReportEngine:
         )
 
         logging.info("Collecting Schema Data")
-        schema_dict = self.introspector.get_schema()
-        logging.info(f"Schema sample: {schema_dict['data'][100]}")
-        schema_analysis = self.modelAnalyzer.generate_table_stats(schema_dict)
-        relationship_graph = self.graphBuilder.build_graph(schema_dict["data"])
+        self.schema_dict = self.introspector.get_schema()
+        logging.info(f"Schema sample: {self.schema_dict['data'][100]}")
+        self.schema_analysis = self.modelAnalyzer.generate_table_stats(self.schema_dict)
+        self.relationship_graph = self.graphBuilder.build_graph(
+            self.schema_dict["data"]
+        )
 
-        self.graph_expander = GraphExpander(relationship_graph)
-        fact_table_analysis = self.factTableDetector.generate_role_hint(
-            schema_analysis, relationship_graph
+        self.graph_expander = GraphExpander(self.relationship_graph)
+        self.fact_table_analysis = self.factTableDetector.generate_role_hint(
+            self.schema_analysis, self.relationship_graph
         )
 
         self.vector_store = PgVectorStore()
-        if not self.vector_store.is_store_built():
-            # docstring_dict = docstring_generator.generate_doc_strings(schema_dict["data"])
-            embedding_documents = (
-                self.embedding_doc_generator.generate_embedding_documents(
-                    schema_dict["data"], fact_table_analysis, {}
-                )
-            )
-            self.embedding_docs_dict = {}
-            for doc in embedding_documents:
-                self.embedding_docs_dict[doc["table_name"]] = doc
 
-            self.context_builder = ContextBuilder(self.embedding_docs_dict)
-
-            text_list = [doc["embedding_text"] for doc in embedding_documents]
-
-            logging.info("Generating Embeddings")
-            embedded_batch = self.embedding_generator.embed_batch(text_list)
-
-            self.vector_store.add_batch(embedded_batch, embedding_documents)
-        else:
-            qs = Embedding.objects.all()
-            self.embedding_docs_dict = {
-                em.content["table_name"]: em.content for em in qs
-            }
-            self.context_builder = ContextBuilder(self.embedding_docs_dict)
+        qs = Embedding.objects.all()
+        self.embedding_docs_dict = {em.content["table_name"]: em.content for em in qs}
+        self.context_builder = ContextBuilder(self.embedding_docs_dict)
         self.table_retriever = TableRetriever(
             self.embedding_generator, self.vector_store
         )
@@ -116,6 +116,3 @@ class ReportEngine:
             "error": reason,
             "status": "Success" if is_success else "Error",
         }
-
-
-engine = ReportEngine()

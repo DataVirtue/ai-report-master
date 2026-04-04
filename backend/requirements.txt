@@ -4,6 +4,7 @@ annotated-types==0.7.0
 anyio==4.12.1
 asgiref==3.11.1
 certifi==2026.2.25
+charset-normalizer==3.4.6
 click==8.3.1
 cuda-bindings==12.9.4
 cuda-pathfinder==1.4.3
@@ -11,6 +12,7 @@ Django==6.0.2
 django-cors-headers==4.9.0
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
+faiss-cpu==1.13.2
 filelock==3.25.2
 fsspec==2026.2.0
 greenlet==3.3.2
@@ -44,6 +46,7 @@ nvidia-nvjitlink-cu12==12.8.93
 nvidia-nvshmem-cu12==3.4.5
 nvidia-nvtx-cu12==12.8.90
 packaging==26.0
+pgvector==0.4.2
 plyer==2.1.0
 psutil==7.2.1
 psycopg2-binary==2.9.11
@@ -55,6 +58,7 @@ PyJWT==2.12.1
 python-dotenv==1.2.2
 PyYAML==6.0.3
 regex==2026.2.28
+requests==2.32.5
 rich==14.2.0
 safetensors==0.7.0
 scikit-learn==1.8.0
@@ -75,4 +79,6 @@ triton==3.6.0
 typer==0.24.1
 typing-inspection==0.4.2
 typing_extensions==4.15.0
+urllib3==2.6.3
 wheel==0.45.1
+gunicorn==21.2.0
