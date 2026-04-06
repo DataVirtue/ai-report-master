@@ -1,6 +1,5 @@
 from typing import List
 import numpy
-from sentence_transformers import SentenceTransformer
 from ai.handlers.open_router_handler import OpenRouterHandler
 import logging
 
@@ -13,6 +12,10 @@ class EmbeddingGenerator:
         if embedding_model:
             self.model = embedding_model
         else:
+            from sentence_transformers import (
+                SentenceTransformer,
+            )  # lazy loading transformer
+
             self.model = SentenceTransformer(self.default_model_name)
 
     def embed_text(self, text: str):
