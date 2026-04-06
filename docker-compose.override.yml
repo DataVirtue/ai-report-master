@@ -1,0 +1,16 @@
+services:
+  backend:
+    networks:
+      - mynet
+
+  frontend:
+    networks:
+      - mynet
+
+  db:
+    networks:
+      - mynet
+
+networks:
+  mynet:
+    external: true

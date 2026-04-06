@@ -1,4 +1,3 @@
-version: "3.9"
 
 services:
   backend:
@@ -11,15 +10,11 @@ services:
       - db
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    networks:
-      - mynet
 
   frontend:
     build: ./frontend
     ports:
       - "3000:80"
-    networks:
-      - mynet
   db:
     image: pgvector/pgvector:pg15
     environment:
@@ -28,13 +23,8 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - mynet
 
 
 volumes:
   postgres_data:
 
-networks:
-  mynet:
-    external: true
