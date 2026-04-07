@@ -4,6 +4,8 @@ from ai.agents import SQLAgent
 import json
 import logging
 from decimal import Decimal
+import datetime
+
 
 
 class ChatService:
@@ -94,9 +96,11 @@ class ChatService:
         self.sql_agent = SQLAgent(self.report_service.report_engine)
         self.tools = self.sql_agent.get_tools()
 
-    def decimal_default(self, obj):
+    def custom_json_serializer(self, obj):
         if isinstance(obj, Decimal):
             return float(obj)
+        if isinstance(obj, (datetime.datetime, datetime.date)):
+            return obj.isoformat()
         raise TypeError(f"Type {type(obj)} not serializable")
 
     def clean_llm_json(self, text: str) -> str:
@@ -118,7 +122,7 @@ class ChatService:
         return text.strip()
 
     def _event(self, type_, data):
-        return f"data: {json.dumps({'type': type_, 'data': data}, default=self.decimal_default)}\n\n"
+        return f"data: {json.dumps({'type': type_, 'data': data}, default=self.custom_json_serializer)}\n\n"
 
     def stream_messages(self, messages):
         messages.append({"role": "system", "content": self.system_prompt})
@@ -206,7 +210,7 @@ class ChatService:
                                 "content": json.dumps(tool_result),
                             }
                         )
-                yield self._event("status", "Generating SQL...")
+                yield self._event("status", "Fetching data...")
                 print(messages)
 
                 # Call LLM again with tool results
@@ -223,6 +227,7 @@ class ChatService:
 
                 if sql_success:
                     # Force final summarization call WITHOUT tools
+                    yield self._event("status", "Summarising response...")
 
                     messages.append(
                         {

@@ -20,7 +20,7 @@ export default function ChatWithTable() {
   const [tableData, setTableData] = useState<TableRow[]>([]);
   const [status, setStatus] = useState<string>("");
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage: Message = { role: "user", content: input };
@@ -31,49 +31,68 @@ export default function ChatWithTable() {
     setInput("");
     setStatus("Starting...");
 
-    const eventSource = new EventSource(
-      `${API_BASE_URL}/ai/api/chat?messages=${encodeURIComponent(JSON.stringify(updatedMessages))}`
-    );
+    // const eventSource = new EventSource(
+    //   `${API_BASE_URL}/ai/api/chat?messages=${encodeURIComponent(JSON.stringify(updatedMessages))}`
+    // );
+    const response = await fetch(`${API_BASE_URL}/ai/api/chat/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: updatedMessages }),
+    });
 
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    // eventSource.onmessage = (event) => {
+    //   const data = JSON.parse(event.data);
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body");
 
-      // 🔹 STATUS UPDATES
-      if (data.type === "status") {
-        setStatus(data.data);
-      }
+    const decoder = new TextDecoder();
+    let buffer = "";
 
-      // 🔹 FINAL MESSAGE
-      if (data.type === "message") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: data.data,
-          },
-        ]);
+    try {
+      while (true) {
+        const { done, value } = await reader?.read();
+        if (done) break;
 
-        setStatus("");
-        eventSource.close();
-      }
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
 
-      // 🔹 OPTIONAL: TABLE DATA
-      if (data.type === "data") {
+        // The last part might be incomplete, so we keep it in the buffer
+        buffer = parts.pop() || "";
 
-        console.log(data.data.rows)
-        if (Array.isArray(data.data.rows)) {
-          setTableData(data.data.rows);
-        } else {
-          console.warn("Invalid rows:", data.data.rows);
+        for (const part of parts) {
+          if (part.startsWith("data: ")) {
+            const jsonStr = part.replace(/^data:\s*/, "");
+            const data = JSON.parse(jsonStr);
+
+            // 🔹 STATUS UPDATES
+            if (data.type === "status") {
+              setStatus(data.data);
+            }
+
+            // 🔹 FINAL MESSAGE
+            if (data.type === "message") {
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: data.data },
+              ]);
+              setStatus("")
+              break;
+            }
+
+            // 🔹 TABLE DATA / ERROR
+            if (data.type === "data") {
+              if (Array.isArray(data.data.rows)) {
+                setTableData(data.data.rows);
+              }
+              setStatus(data.data.error || "");
+            }
+          }
         }
-        setStatus(data.data.error);
       }
-    };
-
-    eventSource.onerror = () => {
-      eventSource.close();
+    } catch (err) {
+      console.error(err);
       setStatus("Something went wrong");
-    };
+    }
   };
   const columns =
     Array.isArray(tableData) && tableData.length > 0

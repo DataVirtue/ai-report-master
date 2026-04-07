@@ -12,6 +12,11 @@ class ServerSentEventRenderer(BaseRenderer):
     media_type = 'text/event-stream'
     format = 'txt'
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        if isinstance(data, dict):
+            error_msg = data.get("detail", str(data))
+            error_payload = {"type": "data", "data": {"error": str(error_msg), "rows": []}}
+            import json
+            return f"data: {json.dumps(error_payload)}\n\n"
         return data
 
 class StreamChatView(APIView):
@@ -23,8 +28,11 @@ class StreamChatView(APIView):
         self.service = ChatService(model="openai/o4-mini")
         return super().dispatch(request, *args, **kwargs)
 
-    def get(self, request):
-        messages = json.loads(request.GET.get("messages", "[]"))
+    def post(self, request):
+        messages = request.data.get("messages", [])
+        if isinstance(messages, str):
+            import json
+            messages = json.loads(messages)
 
         response = StreamingHttpResponse(
             self.stream(messages), content_type="text/event-stream"
