@@ -1,6 +1,7 @@
 import { useState } from "react"
 import LoginForm from "@/components/LoginForm"
 import RegisterForm from "@/components/RegisterForm"
+import Navbar from "@/components/Navbar"
 import { useAuth } from "@/context/AuthContext"
 import ChatWithTable from "@/components/ChatWithTable"
 
@@ -17,6 +18,9 @@ export default function Home() {
     )
   }
   return (
-    <ChatWithTable />
+    <div className="min-h-screen bg-muted/20">
+      <Navbar />
+      <ChatWithTable />
+    </div>
   )
 }
