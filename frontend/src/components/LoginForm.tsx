@@ -56,12 +56,13 @@ export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () =>
           >
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input name="username" placeholder="Enter username" required />
+              <Input id="username" name="username" placeholder="Enter username" required />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
+                id="password"
                 name="password"
                 type="password"
                 placeholder="Enter password"

@@ -66,17 +66,18 @@ export default function RegisterForm({ onLoginClick }: { onLoginClick: () => voi
           >
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input name="username" placeholder="Enter username" required />
+              <Input id="username" name="username" placeholder="Enter username" required />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input name="email" type="email" placeholder="Enter email" required />
+              <Input id="email" name="email" type="email" placeholder="Enter email" required />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
+                id="password"
                 name="password"
                 type="password"
                 placeholder="Enter password"
@@ -92,12 +93,12 @@ export default function RegisterForm({ onLoginClick }: { onLoginClick: () => voi
               {loading ? "Registering..." : success ? "Registered!" : "Register"}
             </Button>
           </form>
-          
+
           <div className="mt-4 text-center text-sm">
-             Already have an account?{" "}
-             <button type="button" onClick={onLoginClick} className="text-primary hover:underline">
-               Login
-             </button>
+            Already have an account?{" "}
+            <button type="button" onClick={onLoginClick} className="text-primary hover:underline">
+              Login
+            </button>
           </div>
         </CardContent>
       </Card>
