@@ -33,8 +33,6 @@ export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () =>
         throw new Error(data.detail || "Login failed")
       }
       login(data.access)
-
-      alert("Login successful 🚀")
     } catch (err: any) {
       setError(err.message)
     } finally {
