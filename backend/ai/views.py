@@ -5,7 +5,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from rest_framework.views import APIView
 from django.http import StreamingHttpResponse
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer
 
 class ServerSentEventRenderer(BaseRenderer):
@@ -21,7 +21,7 @@ class ServerSentEventRenderer(BaseRenderer):
 
 class StreamChatView(APIView):
     
-    permission_classes = [AllowAny] 
+    permission_classes = [IsAuthenticated] 
     renderer_classes = [ServerSentEventRenderer]
 
     def dispatch(self, request, *args, **kwargs):
