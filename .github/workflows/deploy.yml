@@ -23,6 +23,7 @@ jobs:
       - name: Django check
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          FRONTEND_URL: ""
         run: python backend/manage.py check
 
       # Deploy to server
