@@ -42,6 +42,7 @@ jobs:
             --parameters commands='[
               "set -e",
               "cd /home/ubuntu/ai-report-master",
+              "git config --global --add safe.directory /home/ubuntu/ai-report-master"
               "git fetch origin main",
               "git checkout main",
               "git reset --hard origin/main",
