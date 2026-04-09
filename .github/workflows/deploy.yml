@@ -39,15 +39,18 @@ jobs:
             --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy app" \
-            --parameters commands='[
-              "set -e",
-              "cd /home/ubuntu/ai-report-master",
-              "git config --global --add safe.directory /home/ubuntu/ai-report-master",
-              "git fetch origin main",
-              "git checkout main",
-              "git reset --hard origin/main",
-              "git clean -fd",
-              "docker compose up -d --build",
-              "docker compose exec -T backend python manage.py migrate",
-              "docker image prune -f"
-            ]'
+             --parameters commands='[
+            "set -e",
+            "sudo -u ubuntu -i bash -c \"\
+              set -e && \
+              cd /home/ubuntu/ai-report-master && \
+              git config --global --add safe.directory /home/ubuntu/ai-report-master && \
+              git fetch origin main && \
+              git checkout main && \
+              git reset --hard origin/main && \
+              git clean -fd && \
+              docker compose up -d --build && \
+              docker compose exec -T backend python manage.py migrate && \
+              docker image prune -f\
+            \""
+          ]'
