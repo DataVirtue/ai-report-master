@@ -42,13 +42,15 @@ export default function ChatWithTable() {
 
     // eventSource.onmessage = (event) => {
     //   const data = JSON.parse(event.data);
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error("No response body");
-
-    const decoder = new TextDecoder();
-    let buffer = "";
-
     try {
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+
       while (true) {
         const { done, value } = await reader?.read();
         if (done) break;
