@@ -27,31 +27,26 @@ jobs:
         run: python backend/manage.py check
 
       # Deploy to server
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SSH_USER }} 
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-
-            echo "Starting deploy..."
-            cd ai-report-master/
-
-            echo "Pulling latest code..."
-            git fetch origin main
-            git checkout main
-            git reset --hard origin/main
-            git clean -fd
-
-            echo "Rebuilding and starting..."
-            docker compose up -d --build
-
-            echo "Running Migrations.."
-            docker compose exec -T backend python manage.py migrate
-
-            echo "Cleaning unused images..."
-            docker image prune -f
-
-            echo "Deploy complete!"
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Deploy via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy app" \
+            --parameters commands='[
+              "set -e",
+              "cd /home/ubuntu/ai-report-master",
+              "git fetch origin main",
+              "git checkout main",
+              "git reset --hard origin/main",
+              "git clean -fd",
+              "docker compose up -d --build",
+              "docker compose exec -T backend python manage.py migrate",
+              "docker image prune -f"
+            ]'
