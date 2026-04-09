@@ -18,33 +18,35 @@ jobs:
           python-version: "3.11"
 
       - name: Install backend deps
-        run: pip install -r requirements.txt
+        run: pip install -r backend/requirements.txt
 
       - name: Django check
-        run: python manage.py check
+        run: python backend/manage.py check
 
       # Deploy to server
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
-          username: ubuntu
+          username: ${{ secrets.SSH_USER }} 
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
 
             echo "Starting deploy..."
-
-            cd ~/AI-Assited-Reporting
+            cd ai-report-master/
 
             echo "Pulling latest code..."
-            git pull origin main
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            git clean -fd
 
             echo "Rebuilding and starting..."
             docker compose up -d --build
 
             echo "Running Migrations.."
-            docker compose exec backend python manage.py migrate
+            docker compose exec -T backend python manage.py migrate
 
             echo "Cleaning unused images..."
             docker image prune -f
