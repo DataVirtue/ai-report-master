@@ -1,0 +1,54 @@
+name: CI/CD Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend deps
+        run: pip install -r backend/requirements.txt
+
+      - name: Django check
+        run: python backend/manage.py check
+
+      # Deploy to server
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }} 
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            echo "Starting deploy..."
+            cd ai-report-master/
+
+            echo "Pulling latest code..."
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            git clean -fd
+
+            echo "Rebuilding and starting..."
+            docker compose up -d --build
+
+            echo "Running Migrations.."
+            docker compose exec -T backend python manage.py migrate
+
+            echo "Cleaning unused images..."
+            docker image prune -f
+
+            echo "Deploy complete!"
