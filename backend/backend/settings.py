@@ -142,6 +142,14 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     os.getenv("FRONTEND_URL"),
 ]
+raw_origins = os.getenv("CORS_ALLOWED_ORIGINS")
+
+if raw_origins:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip() for origin in raw_origins.split(",") if origin.strip()
+    ]
+else:
+    CORS_ALLOWED_ORIGINS = []
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
