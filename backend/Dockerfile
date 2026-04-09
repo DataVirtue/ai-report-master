@@ -18,4 +18,4 @@ COPY . .
 # Collect static (if needed)
 RUN python manage.py collectstatic --noinput
 
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--timeout", "120", "--threads", "4", "--workers", "2"]

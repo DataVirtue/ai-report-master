@@ -1,38 +1,47 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-const API_BASE_URL = import.meta.env.VITE_API_URL
-import { useAuth } from "@/context/AuthContext"
 
-export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () => void }) {
+const API_BASE_URL = import.meta.env.VITE_API_URL
+
+export default function RegisterForm({ onLoginClick }: { onLoginClick: () => void }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { login } = useAuth()
+  const [success, setSuccess] = useState(false)
 
-  const handleLogin = async (formData: FormData) => {
+  const handleRegister = async (formData: FormData) => {
     setLoading(true)
     setError(null)
+    setSuccess(false)
 
     const username = formData.get("username")
+    const email = formData.get("email")
     const password = formData.get("password")
 
     try {
-      const res = await fetch(API_BASE_URL + "/users/api/token/", {
+      const res = await fetch(API_BASE_URL + "/users/api/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, email, password }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.detail || "Login failed")
+        if (typeof data === 'object' && data !== null) {
+          const errorMessages = Object.entries(data)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join(' | ')
+          throw new Error(errorMessages || "Registration failed")
+        }
+        throw new Error(data.detail || "Registration failed")
       }
-      login(data.access)
+
+      setSuccess(true)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -44,19 +53,25 @@ export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () =>
     <div className="flex min-h-screen items-center justify-center bg-muted">
       <Card className="w-[350px] shadow-lg">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
+          <CardTitle>Register</CardTitle>
+          {success && <CardDescription className="text-green-500">User created successfully! You can now login.</CardDescription>}
         </CardHeader>
 
         <CardContent>
           <form
             action={async (formData) => {
-              await handleLogin(formData)
+              await handleRegister(formData)
             }}
             className="space-y-4"
           >
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input id="username" name="username" placeholder="Enter username" required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" name="email" type="email" placeholder="Enter email" required />
             </div>
 
             <div className="space-y-2">
@@ -74,15 +89,15 @@ export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () =>
               <p className="text-sm text-red-500">{error}</p>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+            <Button type="submit" className="w-full" disabled={loading || success}>
+              {loading ? "Registering..." : success ? "Registered!" : "Register"}
             </Button>
           </form>
 
           <div className="mt-4 text-center text-sm">
-            Don't have an account?{" "}
-            <button type="button" onClick={onRegisterClick} className="text-primary hover:underline">
-              Register
+            Already have an account?{" "}
+            <button type="button" onClick={onLoginClick} className="text-primary hover:underline">
+              Login
             </button>
           </div>
         </CardContent>

@@ -72,7 +72,7 @@ class ReportEngine:
 
         logging.info("Collecting Schema Data")
         self.schema_dict = self.introspector.get_schema()
-        logging.info(f"Schema sample: {self.schema_dict['data'][100]}")
+        logging.info(f"Schema sample: {self.schema_dict['data'][0]}")
         self.schema_analysis = self.modelAnalyzer.generate_table_stats(self.schema_dict)
         self.relationship_graph = self.graphBuilder.build_graph(
             self.schema_dict["data"]
