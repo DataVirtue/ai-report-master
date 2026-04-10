@@ -2,10 +2,8 @@ from ai.handlers import OpenRouterHandler
 from .report_generation_service import ReportGenerationService
 from ai.agents import SQLAgent
 import json
-import logging
 from decimal import Decimal
 import datetime
-
 
 
 class ChatService:

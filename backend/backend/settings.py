@@ -137,9 +137,6 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {"anon": "10/day", "user": "10/day"},
 }
 
-CORS_ALLOWED_ORIGINS = [
-    os.getenv("FRONTEND_URL"),
-]
 raw_origins = os.getenv("CORS_ALLOWED_ORIGINS")
 
 if raw_origins:
@@ -148,6 +145,12 @@ if raw_origins:
     ]
 else:
     CORS_ALLOWED_ORIGINS = []
+
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+
+if FRONTEND_URL:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -167,6 +170,8 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = Path(BASE_DIR, "/static")
 AUTH_USER_MODEL = "users.User"
+
+SIMPLE_JWT = {"USER_ID_FIELD": "id", "USER_ID_CLAIM": "user_id"}
 
 SOURCE_DB_NAME = os.getenv("SOURCE_DB_NAME")
 SOURCE_DB_USER = os.getenv("SOURCE_DB_USER")

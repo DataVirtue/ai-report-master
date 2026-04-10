@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@/lib/chat";
-
+import { useAuth } from "@/context/AuthContext"
 
 
 type TableRow = Record<string, any>;
@@ -15,6 +15,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL
 
 export default function ChatWithTable() {
 
+  const { token } = useAuth()
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [tableData, setTableData] = useState<TableRow[]>([]);
@@ -31,19 +32,17 @@ export default function ChatWithTable() {
     setInput("");
     setStatus("Starting...");
 
-    // const eventSource = new EventSource(
-    //   `${API_BASE_URL}/ai/api/chat?messages=${encodeURIComponent(JSON.stringify(updatedMessages))}`
-    // );
-    const response = await fetch(`${API_BASE_URL}/ai/api/chat/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: updatedMessages }),
-    });
 
-    // eventSource.onmessage = (event) => {
-    //   const data = JSON.parse(event.data);
     try {
 
+      const response = await fetch(`${API_BASE_URL}/ai/api/chat/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ messages: updatedMessages }),
+      });
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No response body");
 
