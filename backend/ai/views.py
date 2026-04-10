@@ -34,7 +34,6 @@ class StreamChatView(APIView):
     renderer_classes = [ServerSentEventRenderer]
 
     def dispatch(self, request, *args, **kwargs):
-        logger.info(f"chat requrest{request.headers}")
         self.service = ChatService(model="openai/o4-mini")
         return super().dispatch(request, *args, **kwargs)
 
