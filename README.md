@@ -1,8 +1,49 @@
 # AI-Assisted Reporting (QuerySense)
 
-This repository contains the source code for QuerySense, an AI-assisted reporting and data analysis application. It provides a conversational interface over database records, allowing users to query and analyze data using natural language.
+QuerySense is an AI-powered reporting system that allows users to query databases using natural language and receive real-time, streaming insights.
 
-The application is split into a Django/PostgreSQL backend and a React (Vite) frontend.
+It combines Retrieval-Augmented Generation (RAG), vector search (pgvector), and Server-Sent Events (SSE) to deliver a ChatGPT-like experience for structured data.
+
+## Highlights
+
+- ChatGPT-like interface for querying your own database
+- Real-time streaming AI responses (not traditional request-response APIs)
+- Retrieval-Augmented Generation (RAG) powered by pgvector
+
+---
+
+## Features
+
+- **Natural Language Querying**
+  - Query your database using plain English instead of SQL
+
+- **Real-Time Streaming Responses (SSE)**
+  - Live updates during processing:
+    - "Querying database..."
+    - "Analyzing results..."
+    - "Generating insights..."
+
+- **RAG-based AI Insights**
+  - Combines LLMs with vector search to generate context-aware answers
+
+- **PostgreSQL + pgvector Integration**
+  - Efficient similarity search over embeddings for large datasets
+
+- **Plug-and-Play with Your Database**
+  - Connect your own PostgreSQL database via environment variables
+  - Works as an AI layer on top of existing data
+
+- **JWT Authentication**
+  - Secure API access with login and registration flows
+
+- **Modular Backend Architecture**
+  - Clear separation between API, AI processing, and data access layers
+
+- **Modern Frontend Stack**
+  - React 19 + TypeScript + Tailwind + shadcn/ui
+
+- **Dockerized Deployment**
+  - Spin up full stack (frontend + backend + database) with Docker Compose
 
 ## Architecture & Implementation Details
 
