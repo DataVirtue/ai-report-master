@@ -100,9 +100,9 @@ export default function ChatWithTable() {
       ? Object.keys(tableData[0])
       : [];
   return (
-    <div className="grid grid-cols-3 gap-4 h-screen p-4 ">
+    <div className="grid grid-cols-10 gap-4 h-full px-4 pb-4">
       {/* Chat Section */}
-      <Card className="col-span-2 flex flex-col min-h-0 ">
+      <Card className="col-span-3 flex flex-col min-h-0 ">
         <CardContent className="flex flex-col h-full p-4 min-h-0">
           <ScrollArea className="flex-1 mb-4 h-0">
             <div className="space-y-3">
@@ -143,7 +143,7 @@ export default function ChatWithTable() {
 
       {/* Table Section */}
 
-      <Card className="flex flex-col">
+      <Card className="col-span-7 flex flex-col">
 
 
         <CardContent className="p-4 overflow-auto">

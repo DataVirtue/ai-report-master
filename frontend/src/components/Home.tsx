@@ -18,9 +18,11 @@ export default function Home() {
     )
   }
   return (
-    <div className="min-h-screen bg-muted/20">
+    <div className="flex flex-col h-screen overflow-hidden bg-muted/20">
       <Navbar />
-      <ChatWithTable />
+      <main className="flex-1 overflow-hidden">
+        <ChatWithTable />
+      </main>
     </div>
   )
 }
