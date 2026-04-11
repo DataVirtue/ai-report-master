@@ -16,7 +16,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL
 export default function ChatWithTable() {
 
   const { token } = useAuth()
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "user", content: "hello" },
+    { role: "assistant", content: "hi" }
+  ]);
   const [input, setInput] = useState<string>("");
   const [tableData, setTableData] = useState<TableRow[]>([]);
   const [status, setStatus] = useState<string>("");
@@ -111,7 +114,7 @@ export default function ChatWithTable() {
                   key={idx}
                   className={`p-2 rounded-xl max-w-xs ${msg.role === "user"
                     ? "bg-blue-500 text-white ml-auto"
-                    : "bg-gray-200"
+                    : "bg-muted text-foreground"
                     }`}
                 >
                   {msg.content}
