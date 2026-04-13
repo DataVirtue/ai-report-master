@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@/lib/chat";
 import { useAuth } from "@/context/AuthContext"
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { Download } from "lucide-react";
 
 
 type TableRow = Record<string, any>;
@@ -98,6 +101,16 @@ export default function ChatWithTable() {
       setStatus("Something went wrong");
     }
   };
+
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(tableData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, `report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   const columns =
     Array.isArray(tableData) && tableData.length > 0
       ? Object.keys(tableData[0])
@@ -150,7 +163,19 @@ export default function ChatWithTable() {
 
 
         <CardContent className="p-4 overflow-auto">
-          <h2 className="text-lg font-semibold mb-3">Live Data</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">Live Data</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToExcel}
+              disabled={tableData.length === 0}
+              className="gap-1.5"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </div>
           <table className="w-full text-sm border">
             <thead>
               <tr className="border-b">
