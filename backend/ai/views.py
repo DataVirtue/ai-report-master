@@ -1,9 +1,8 @@
-import json
+from ai.models import Conversation
+from ai.serializers import ConversationSerializer
 from .services import ChatService
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from django.http import StreamingHttpResponse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer
@@ -53,3 +52,14 @@ class StreamChatView(APIView):
 
     def stream(self, messages):
         yield from self.service.stream_messages(messages)
+
+
+class ConversationViewsSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ConversationSerializer
+
+    def get_queryset(self):
+        return Conversation.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
