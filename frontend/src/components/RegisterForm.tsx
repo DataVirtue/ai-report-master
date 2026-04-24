@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -6,11 +7,12 @@ import { Label } from "@/components/ui/label"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
 
-export default function RegisterForm({ onLoginClick }: { onLoginClick: () => void }) {
+export default function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-
+  const navigate = useNavigate()
+  
   const handleRegister = async (formData: FormData) => {
     setLoading(true)
     setError(null)
@@ -96,7 +98,7 @@ export default function RegisterForm({ onLoginClick }: { onLoginClick: () => voi
 
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
-            <button type="button" onClick={onLoginClick} className="text-primary hover:underline">
+            <button type="button" onClick={() => navigate("/login")} className="text-primary hover:underline">
               Login
             </button>
           </div>
