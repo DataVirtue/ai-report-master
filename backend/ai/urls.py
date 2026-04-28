@@ -9,7 +9,8 @@ conversation_router.register(
 )
 
 urlpatterns = [
-    path("api/chat/", StreamChatView.as_view()),
+    path("chat/", StreamChatView.as_view()),  # no ID
+    path("chat/<conversation_id>", StreamChatView.as_view()),
 ]
 
 urlpatterns += conversation_router.urls

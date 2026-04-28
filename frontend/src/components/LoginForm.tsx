@@ -25,7 +25,7 @@ export default function LoginForm() {
     const password = formData.get("password")
 
     try {
-      const res = await fetch(API_BASE_URL + "/users/api/token/", {
+      const res = await fetch(API_BASE_URL + "/api/users/token/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

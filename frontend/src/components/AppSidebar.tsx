@@ -3,10 +3,24 @@ import { useAuth } from "@/context/AuthContext"
 import { ModeToggle } from "@/components/ModeToggle"
 import { MessageSquare, LogOut } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import type { Conversation } from "@/lib/chat"
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  conversations: Conversation[];
+
+}
+
+export function AppSidebar({ conversations }: AppSidebarProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const conversationElements = conversations.map((convo) => (
+    <>
+      <SidebarMenuButton tooltip="Go to Chat" onClick={() => navigate(`/${convo.id}`)} className="gap-2 h-10 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+        <span className="text-sm font-medium" key={convo.id}>{convo.title}</span>
+      </SidebarMenuButton>
+    </>
+
+  ))
 
   return (
     <Sidebar collapsible="icon">
@@ -16,7 +30,7 @@ export function AppSidebar() {
           QuerySense
         </span>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground mt-4 mb-2 group-data-[collapsible=icon]:hidden">Actions</SidebarGroupLabel>
@@ -27,6 +41,7 @@ export function AppSidebar() {
                   <MessageSquare className="h-5 w-5 shrink-0" />
                   <span className="text-sm font-medium">New Chat</span>
                 </SidebarMenuButton>
+                {...conversationElements}
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

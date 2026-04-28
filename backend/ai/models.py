@@ -42,4 +42,4 @@ class Message(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.conversation.updated_at = self.created_at
-        self.conversation.save(updated_fields=["updated_at"])
+        self.conversation.save(update_fields=["updated_at"])

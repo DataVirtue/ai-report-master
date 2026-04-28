@@ -12,7 +12,7 @@ export default function RegisterForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const navigate = useNavigate()
-  
+
   const handleRegister = async (formData: FormData) => {
     setLoading(true)
     setError(null)
@@ -23,7 +23,7 @@ export default function RegisterForm() {
     const password = formData.get("password")
 
     try {
-      const res = await fetch(API_BASE_URL + "/users/api/register/", {
+      const res = await fetch(API_BASE_URL + "/api/users/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
