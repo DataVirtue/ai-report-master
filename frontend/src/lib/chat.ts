@@ -10,27 +10,6 @@ export type Conversation = {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
 
-// usused function
-export async function send_messages(messages: Array<Message>) {
-
-  const res = await fetch(API_BASE_URL + "/api/ai/chat/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ "messages": messages }),
-  })
-  if (!res.ok) {
-    throw new Error(`Failed to fetch conversations: ${res.status}`)
-  }
-
-  const data = await res.json()
-  return data.message
-
-
-
-
-}
 
 export async function get_conversation_list(token: string, pageUrl?: string | null) {
   const fetchUrl = pageUrl || (API_BASE_URL + "/api/ai/conversations/");
@@ -57,7 +36,6 @@ export async function create_conversation(token: string) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ "title": "Latest Chat" })
   })
   if (!res.ok) {
     throw new Error(`Failed to fetch conversations: ${res.status}`)
