@@ -1,31 +1,53 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Message } from "@/lib/chat";
+import { type Message, get_conversation } from "@/lib/chat";
 import { useAuth } from "@/context/AuthContext"
-
-
 type TableRow = Record<string, any>;
-
+import { useParams, useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
+type Props = {
+  updateConversationTitle: (id: number, title: string) => void;
+};
 
-
-export default function ChatWithTable() {
-
+export default function ChatWithTable({ updateConversationTitle }: Props) {
   const { token } = useAuth()
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "user", content: "hello" },
-    { role: "assistant", content: "hi" }
-  ]);
+  const navigate = useNavigate()
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [tableData, setTableData] = useState<TableRow[]>([]);
   const [status, setStatus] = useState<string>("");
+  const { conversationId } = useParams();
+  console.log(conversationId)
+  useEffect(() => {
+    console.log("running convo use effect")
+    if (!conversationId) {
+      setMessages([])
+      setStatus("")
+      return;
+    }
+    const getConvoWrapper = async () => {
+      if (!token) {
+        throw Error("Cannot fetch conversations for Unauthenticated user")
+      }
+      const data = await get_conversation(token, conversationId)
+      console.log("fetched full convo data", data)
+      const messages = data.messages
+      setMessages([...messages])
+
+    }
+    getConvoWrapper();
+
+  }, [conversationId])
 
   const handleSend = async () => {
     if (!input.trim()) return;
+    if (!token) {
+      throw new Error("Unauthenticated User trying to send messages")
+    }
 
     const userMessage: Message = { role: "user", content: input };
 
@@ -36,15 +58,24 @@ export default function ChatWithTable() {
     setStatus("Starting...");
 
 
-    try {
 
-      const response = await fetch(`${API_BASE_URL}/ai/api/chat/`, {
+    try {
+      // let convo_id = conversationId
+      // if (!convo_id) { // generate new conversation if no convo id
+      //   const data = await create_conversation(token)
+      //   console.log("created convo", data)
+      //   convo_id = data['id']
+      // }
+      // console.log(convo_id)
+
+      const url = conversationId ? `${API_BASE_URL}/api/ai/chat/${conversationId}` : `${API_BASE_URL}/api/ai/chat/`
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ content: userMessage.content }),
       });
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No response body");
@@ -68,6 +99,16 @@ export default function ChatWithTable() {
             const jsonStr = part.replace(/^data:\s*/, "");
             const data = JSON.parse(jsonStr);
 
+            //CONVERSATION ID UPDATE 
+
+            if (data.type === "meta") {
+              const convo_id = data.data.conversation_id
+              console.log("meta data", data)
+              if (!conversationId) {
+                navigate(`/${convo_id}`)
+              }
+            }
+
             // 🔹 STATUS UPDATES
             if (data.type === "status") {
               setStatus(data.data);
@@ -89,6 +130,10 @@ export default function ChatWithTable() {
                 setTableData(data.data.rows);
               }
               setStatus(data.data.error || "");
+            }
+            if (data.type === "title" && conversationId) {
+              updateConversationTitle(parseInt(conversationId), data.data)
+
             }
           }
         }

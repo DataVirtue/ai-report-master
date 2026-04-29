@@ -6,7 +6,7 @@ from .views import RegisterView
 from django.urls import path
 
 urlpatterns = [
-    path("api/token/", TokenObtainPairView.as_view()),
-    path("api/token/refresh/", TokenRefreshView.as_view()),
-    path("api/register/", RegisterView.as_view()),
+    path("token/", TokenObtainPairView.as_view()),
+    path("token/refresh/", TokenRefreshView.as_view()),
+    path("register/", RegisterView.as_view()),
 ]

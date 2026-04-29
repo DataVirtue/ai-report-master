@@ -4,6 +4,9 @@ from ai.agents import SQLAgent
 import json
 from decimal import Decimal
 import datetime
+from ai.models import Message,Conversation
+from django.db import transaction
+from django.db.models import Max
 
 
 class ChatService:
@@ -119,6 +122,27 @@ class ChatService:
 
         return text.strip()
 
+    def create_message(self, conversation, role, content):
+        with transaction.atomic():
+            conversation = Conversation.objects.select_for_update().get(
+                pk=conversation.pk
+            )
+            last = (
+                Message.objects.filter(conversation=conversation)
+                .aggregate(Max("order"))["order__max"]
+                or 0
+            )
+
+            return Message.objects.create(
+                conversation=conversation, role=role, content=content, order=last + 1
+            )
+
+    def get_conversation_title(self, messages):
+        messages_string = str(messages)
+        content = f"Summarize this conversation into a concise title (max 6 words, no punctuation, return only the title):${messages_string}"
+        response = self.handler.get_response(content, self.model)
+        return response
+
     def _event(self, type_, data):
         return f"data: {json.dumps({'type': type_, 'data': data}, default=self.custom_json_serializer)}\n\n"
 
@@ -150,7 +174,7 @@ class ChatService:
                 content = response.get("content")
                 if content:
                     yield self._event("message", content)
-                return
+                return {"role": "assistant", "content": content}
 
             if tool_calls:
                 yield self._event("status", "Fetching schema...")
@@ -243,5 +267,6 @@ class ChatService:
 
                     if content:
                         yield self._event("message", content)
+                        return {"role": "assistant", "content": content}
 
-                    break
+                    return {"role": "assistant", "content": content}

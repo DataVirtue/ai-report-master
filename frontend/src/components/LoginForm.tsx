@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate, Navigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,10 +7,15 @@ import { Label } from "@/components/ui/label"
 const API_BASE_URL = import.meta.env.VITE_API_URL
 import { useAuth } from "@/context/AuthContext"
 
-export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () => void }) {
+export default function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { login } = useAuth()
+  const { login, token } = useAuth()
+  const navigate = useNavigate()
+
+  if (token) {
+    return <Navigate to="/" replace />
+  }
 
   const handleLogin = async (formData: FormData) => {
     setLoading(true)
@@ -19,7 +25,7 @@ export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () =>
     const password = formData.get("password")
 
     try {
-      const res = await fetch(API_BASE_URL + "/users/api/token/", {
+      const res = await fetch(API_BASE_URL + "/api/users/token/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -33,6 +39,7 @@ export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () =>
         throw new Error(data.detail || "Login failed")
       }
       login(data.access)
+      navigate("/")
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -81,7 +88,7 @@ export default function LoginForm({ onRegisterClick }: { onRegisterClick?: () =>
 
           <div className="mt-4 text-center text-sm">
             Don't have an account?{" "}
-            <button type="button" onClick={onRegisterClick} className="text-primary hover:underline">
+            <button type="button" onClick={() => navigate("/register")} className="text-primary hover:underline">
               Register
             </button>
           </div>
