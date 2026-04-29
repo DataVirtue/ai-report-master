@@ -4,7 +4,7 @@ from ai.agents import SQLAgent
 import json
 from decimal import Decimal
 import datetime
-from ai.models import Message
+from ai.models import Message,Conversation
 from django.db import transaction
 from django.db.models import Max
 
@@ -124,9 +124,11 @@ class ChatService:
 
     def create_message(self, conversation, role, content):
         with transaction.atomic():
+            conversation = Conversation.objects.select_for_update().get(
+                pk=conversation.pk
+            )
             last = (
-                Message.objects.select_for_update()
-                .filter(conversation=conversation)
+                Message.objects.filter(conversation=conversation)
                 .aggregate(Max("order"))["order__max"]
                 or 0
             )

@@ -20,6 +20,9 @@ export async function send_messages(messages: Array<Message>) {
     },
     body: JSON.stringify({ "messages": messages }),
   })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch conversations: ${res.status}`)
+  }
 
   const data = await res.json()
   return data.message
@@ -38,6 +41,9 @@ export async function get_conversation_list(token: string, pageUrl?: string | nu
       Authorization: `Bearer ${token}`,
     },
   })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch conversations: ${res.status}`)
+  }
   const data = await res.json()
   console.log("data from get_conversation_list", data)
   return data
@@ -53,6 +59,9 @@ export async function create_conversation(token: string) {
     },
     body: JSON.stringify({ "title": "Latest Chat" })
   })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch conversations: ${res.status}`)
+  }
   const data = await res.json()
   console.log("data from create_conversation", data)
   return data
@@ -69,6 +78,9 @@ export async function get_conversation(token: string, conversation_id: string) {
       Authorization: `Bearer ${token}`,
     },
   })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch conversations: ${res.status}`)
+  }
   const data = await res.json()
   console.log(data)
   return data

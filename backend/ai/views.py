@@ -1,4 +1,4 @@
-from rest_framework.response import Serializer
+from rest_framework.serializers import Serializer
 from ai.models import Conversation
 from ai.serializers import (
     ConversationSerializer,
@@ -51,7 +51,7 @@ class StreamChatView(APIView):
         serializer = ChatMessageInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         message = serializer.validated_data
-        convo = Conversation.objects.filter(id=conversation_id).first()
+        convo = Conversation.objects.filter(id=conversation_id,user=request.user).first()
         if not convo:
             convo = Conversation.objects.create(user=request.user)
 
@@ -133,14 +133,14 @@ class ConversationViewsSet(ModelViewSet):
         return self.serializer_action_classes.get(self.action, ConversationSerializer)
 
     def get_queryset(self):
-        return Conversation.objects.filter(user=self.request.user)
+        return Conversation.objects.filter(user=self.request.user).order_by('-updated_at','-id')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
     @action(detail=True, methods=["post"])
     def generate_title(self, request, pk=None):
-        messages = request.POST.get("messages", [])
+        messages = request.data.get("messages", [])
         if not messages:
             return Response(
                 {"error": "No messages found"}, status=status.HTTP_400_BAD_REQUEST
