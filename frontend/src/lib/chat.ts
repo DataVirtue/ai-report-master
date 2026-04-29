@@ -29,8 +29,9 @@ export async function send_messages(messages: Array<Message>) {
 
 }
 
-export async function get_conversation_list(token: string) {
-  const res = await fetch(API_BASE_URL + "/api/ai/conversations/", {
+export async function get_conversation_list(token: string, pageUrl?: string | null) {
+  const fetchUrl = pageUrl || (API_BASE_URL + "/api/ai/conversations/");
+  const res = await fetch(fetchUrl, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -38,7 +39,7 @@ export async function get_conversation_list(token: string) {
     },
   })
   const data = await res.json()
-  console.log(data)
+  console.log("data from get_conversation_list", data)
   return data
 
 }

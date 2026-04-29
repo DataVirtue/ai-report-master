@@ -1,27 +1,30 @@
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger } from "@/components/ui/sidebar"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from "@/components/ui/sidebar"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useAuth } from "@/context/AuthContext"
 import { ModeToggle } from "@/components/ModeToggle"
-import { MessageSquare, LogOut } from "lucide-react"
+import { MessageSquare, LogOut, Clock, ChevronRight, Loader2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { useEffect } from "react"
+import { useInView } from "react-intersection-observer"
 import type { Conversation } from "@/lib/chat"
 
 type AppSidebarProps = {
   conversations: Conversation[];
-
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
-export function AppSidebar({ conversations }: AppSidebarProps) {
+export function AppSidebar({ conversations, onLoadMore, hasMore, isLoadingMore }: AppSidebarProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
-  const conversationElements = conversations.map((convo) => (
-    <>
-      <SidebarMenuButton tooltip="Go to Chat" onClick={() => navigate(`/${convo.id}`)} className="gap-2 h-10 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-        <span className="text-sm font-medium" key={convo.id}>{convo.title}</span>
-      </SidebarMenuButton>
-    </>
+  const { ref, inView } = useInView()
 
-  ))
-
+  useEffect(() => {
+    if (inView && hasMore && !isLoadingMore && onLoadMore) {
+      onLoadMore()
+    }
+  }, [inView, hasMore, isLoadingMore, onLoadMore])
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="h-14 p-4 border-b flex flex-row items-center gap-2">
@@ -41,8 +44,37 @@ export function AppSidebar({ conversations }: AppSidebarProps) {
                   <MessageSquare className="h-5 w-5 shrink-0" />
                   <span className="text-sm font-medium">New Chat</span>
                 </SidebarMenuButton>
-                {...conversationElements}
               </SidebarMenuItem>
+
+              {conversations.length > 0 && (
+                <Collapsible defaultOpen={false} className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip="Recent Chats" className="gap-2 h-10 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+                        <Clock className="h-5 w-5 shrink-0" />
+                        <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Recent Chats</span>
+                        <ChevronRight className="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {conversations.map((convo) => (
+                          <SidebarMenuSubItem key={convo.id}>
+                            <SidebarMenuSubButton onClick={() => navigate(`/${convo.id}`)} className="cursor-pointer">
+                              <span>{convo.title}</span>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                        {hasMore && (
+                          <div ref={ref} className="py-2 flex justify-center">
+                            {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <div className="h-4"></div>}
+                          </div>
+                        )}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
