@@ -65,7 +65,6 @@ class StreamChatView(APIView):
 
     def stream_from_conversation(self, conversation_id, message):
         conversation = get_object_or_404(Conversation, id=conversation_id)
-        logger.info(f" message: {message}")
 
         yield self.service._event("meta", data={"conversation_id": conversation_id})
 
