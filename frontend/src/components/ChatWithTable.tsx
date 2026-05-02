@@ -60,15 +60,8 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
 
 
     try {
-      // let convo_id = conversationId
-      // if (!convo_id) { // generate new conversation if no convo id
-      //   const data = await create_conversation(token)
-      //   console.log("created convo", data)
-      //   convo_id = data['id']
-      // }
-      // console.log(convo_id)
-
-      const url = conversationId ? `${API_BASE_URL}/api/ai/chat/${conversationId}` : `${API_BASE_URL}/api/ai/chat/`
+      let currentConvoId = conversationId;
+      const url = currentConvoId ? `${API_BASE_URL}/api/ai/chat/${currentConvoId}` : `${API_BASE_URL}/api/ai/chat/`
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -104,6 +97,7 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
             if (data.type === "meta") {
               const convo_id = data.data.conversation_id
               console.log("meta data", data)
+              currentConvoId = convo_id.toString();
               if (!conversationId) {
                 navigate(`/${convo_id}`)
               }
@@ -131,8 +125,8 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
               }
               setStatus(data.data.error || "");
             }
-            if (data.type === "title" && conversationId) {
-              updateConversationTitle(parseInt(conversationId), data.data)
+            if (data.type === "title" && currentConvoId) {
+              updateConversationTitle(parseInt(currentConvoId), data.data)
 
             }
           }

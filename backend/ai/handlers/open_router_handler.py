@@ -32,7 +32,14 @@ class OpenRouterHandler:
         )
 
         result = response.json()
-        return result["choices"][0]["message"]["content"]
+        
+        if "error" in result:
+            raise Exception(str(result["error"]))
+
+        if "choices" in result:
+            return result["choices"][0]["message"]["content"]
+            
+        raise Exception(f"Unexpected LLM response: {result}")
 
     def get_response_with_message_list(
         self,
