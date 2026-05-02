@@ -1,4 +1,5 @@
 from ai.handlers import OpenRouterHandler
+from ai.handlers.open_router_handler import OpenRouterError
 from .report_generation_service import ReportGenerationService
 from ai.agents import SQLAgent
 import json
@@ -140,8 +141,11 @@ class ChatService:
     def get_conversation_title(self, messages):
         messages_string = str(messages)
         content = f"Summarize this conversation into a concise title (max 6 words, no punctuation, return only the title):${messages_string}"
-        response = self.handler.get_response(content, self.model)
-        return response
+        try:
+            response = self.handler.get_response(content, self.model)
+            return response
+        except OpenRouterError:
+            return "New Conversation"
 
     def _event(self, type_, data):
         return f"data: {json.dumps({'type': type_, 'data': data}, default=self.custom_json_serializer)}\n\n"
@@ -152,9 +156,14 @@ class ChatService:
         yield self._event("status", "Understanding request...")
 
         # First LLM call
-        response = self.handler.get_response_with_message_list(
-            messages, self.model, tools=self.tools
-        )
+        try:
+            response = self.handler.get_response_with_message_list(
+                messages, self.model, tools=self.tools
+            )
+        except OpenRouterError as e:
+            error_msg = f"Sorry, the AI service encountered an error: {str(e)}"
+            yield self._event("message", error_msg)
+            return {"role": "assistant", "content": error_msg}
         messages.append(
             {
                 "role": "assistant",
@@ -236,9 +245,14 @@ class ChatService:
                 print(messages)
 
                 # Call LLM again with tool results
-                response = self.handler.get_response_with_message_list(
-                    messages, self.model, tools=self.tools if not sql_success else []
-                )
+                try:
+                    response = self.handler.get_response_with_message_list(
+                        messages, self.model, tools=self.tools if not sql_success else []
+                    )
+                except OpenRouterError as e:
+                    error_msg = f"Sorry, the AI service encountered an error: {str(e)}"
+                    yield self._event("message", error_msg)
+                    return {"role": "assistant", "content": error_msg}
                 messages.append(
                     {
                         "role": "assistant",
@@ -257,11 +271,16 @@ class ChatService:
                             "content": "The SQL query has already been executed successfully. Do not call any tools. Provide a clear summary of the results.",
                         }
                     )
-                    final_response = self.handler.get_response_with_message_list(
-                        messages,
-                        self.model,
-                        tools=[],  # IMPORTANT: disable tools
-                    )
+                    try:
+                        final_response = self.handler.get_response_with_message_list(
+                            messages,
+                            self.model,
+                            tools=[],  # IMPORTANT: disable tools
+                        )
+                    except OpenRouterError as e:
+                        error_msg = f"Sorry, the AI service encountered an error while summarizing: {str(e)}"
+                        yield self._event("message", error_msg)
+                        return {"role": "assistant", "content": error_msg}
 
                     content = final_response.get("content")
 
