@@ -40,8 +40,12 @@ class OpenRouterHandler:
         if "error" in result:
             raise OpenRouterError(str(result["error"]))
 
-        if "choices" in result:
-            return result["choices"][0]["message"]["content"]
+        choices = result.get("choices")
+        if isinstance(choices, list) and choices:
+            message = choices[0].get("message") if isinstance(choices[0], dict) else None
+            content = message.get("content") if isinstance(message, dict) else None
+            if content is not None:
+                return content
             
         logging.debug(f"Unexpected LLM response payload: {result}")
         safe_keys = list(result.keys()) if isinstance(result, dict) else type(result).__name__
