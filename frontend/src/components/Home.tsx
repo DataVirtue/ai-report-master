@@ -15,11 +15,16 @@ export default function Home() {
 
 
   function updateConversationTitle(id: number, title: string) {
-    setConversations(prev =>
-      prev.map(conv =>
-        conv.id === id ? { ...conv, title } : conv
-      )
-    )
+    setConversations(prev => {
+      const exists = prev.some(conv => conv.id === id);
+      if (exists) {
+        return prev.map(conv =>
+          conv.id === id ? { ...conv, title } : conv
+        );
+      } else {
+        return [{ id, title }, ...prev];
+      }
+    });
   }
 
   const getConvoWrapper = async () => {

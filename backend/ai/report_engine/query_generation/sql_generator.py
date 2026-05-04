@@ -1,4 +1,4 @@
-from ai.handlers.open_router_handler import OpenRouterHandler
+from ai.handlers.open_router_handler import OpenRouterHandler, OpenRouterError
 import re
 
 
@@ -78,5 +78,8 @@ class SqlGenerator:
 
         SQL:
         """
-        response = self.handler.get_response(prompt, self.model)
-        return self.extract_sql(response)
+        try:
+            response = self.handler.get_response(prompt, self.model)
+            return self.extract_sql(response)
+        except OpenRouterError as e:
+            return f"-- Error generating SQL: {str(e)}"

@@ -7,20 +7,24 @@ import logging
 load_dotenv()
 
 
+class OpenRouterError(Exception):
+    pass
+
+
 class OpenRouterHandler:
     def __init__(self) -> None:
         self.url = os.getenv("OPEN_ROUTER_URL")
         self.embedding_url = os.getenv("OPEN_ROUTER_EMBEDDINGS_URL")
         self.api_key = os.getenv("OPEN_ROUTER_API_KEY")
         if self.url is None or self.api_key is None:
-            raise Exception("Open routrer credentials not found")
+            raise OpenRouterError("Open routrer credentials not found")
         self.headers = {}
         self.headers["Authorization"] = f"Bearer {self.api_key}"
         self.headers["Content-Type"] = "application/json"
 
     def get_response(self, context, llm_model="openrouter/hunter-alpha"):
         if self.url is None or self.headers is None:
-            raise Exception("Open routrer credentials not found")
+            raise OpenRouterError("Open routrer credentials not found")
         logging.debug("sending request to llm")
         response = requests.post(
             url=self.url,
@@ -32,7 +36,20 @@ class OpenRouterHandler:
         )
 
         result = response.json()
-        return result["choices"][0]["message"]["content"]
+        
+        if "error" in result:
+            raise OpenRouterError(str(result["error"]))
+
+        choices = result.get("choices")
+        if isinstance(choices, list) and choices:
+            message = choices[0].get("message") if isinstance(choices[0], dict) else None
+            content = message.get("content") if isinstance(message, dict) else None
+            if content is not None:
+                return content
+            
+        logging.debug(f"Unexpected LLM response payload: {result}")
+        safe_keys = list(result.keys()) if isinstance(result, dict) else type(result).__name__
+        raise OpenRouterError(f"Unexpected LLM response format. Keys present: {safe_keys}")
 
     def get_response_with_message_list(
         self,
@@ -42,7 +59,7 @@ class OpenRouterHandler:
         tools=None,
     ):
         if self.url is None or self.headers is None:
-            raise Exception("Open routrer credentials not found")
+            raise OpenRouterError("Open routrer credentials not found")
         logging.debug("sending request to llm")
         response = requests.post(
             url=self.url,
@@ -59,7 +76,7 @@ class OpenRouterHandler:
         print(result)
 
         if "error" in result:
-            raise Exception(result["error"])
+            raise OpenRouterError(str(result["error"]))
 
         if "choices" in result:
             return result["choices"][0]["message"]
@@ -68,7 +85,9 @@ class OpenRouterHandler:
         if "output" in result:
             return result["output"]
 
-        raise Exception(f"Unexpected LLM response: {result}")
+        logging.debug(f"Unexpected LLM response payload: {result}")
+        safe_keys = list(result.keys()) if isinstance(result, dict) else type(result).__name__
+        raise OpenRouterError(f"Unexpected LLM response format. Keys present: {safe_keys}")
 
     def get_embeddings(
         self,
@@ -77,7 +96,7 @@ class OpenRouterHandler:
         embedding_dimension=1532,
     ):
         if self.embedding_url is None or self.api_key is None:
-            raise Exception("Open routrer credentials not found")
+            raise OpenRouterError("Open routrer credentials not found")
 
         data_input = input if isinstance(input, list) else [input]
 

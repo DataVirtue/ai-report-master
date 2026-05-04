@@ -60,15 +60,8 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
 
 
     try {
-      // let convo_id = conversationId
-      // if (!convo_id) { // generate new conversation if no convo id
-      //   const data = await create_conversation(token)
-      //   console.log("created convo", data)
-      //   convo_id = data['id']
-      // }
-      // console.log(convo_id)
-
-      const url = conversationId ? `${API_BASE_URL}/api/ai/chat/${conversationId}` : `${API_BASE_URL}/api/ai/chat/`
+      let currentConvoId = conversationId;
+      const url = currentConvoId ? `${API_BASE_URL}/api/ai/chat/${currentConvoId}` : `${API_BASE_URL}/api/ai/chat/`
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -102,10 +95,13 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
             //CONVERSATION ID UPDATE 
 
             if (data.type === "meta") {
-              const convo_id = data.data.conversation_id
+              const convo_id = data?.data?.conversation_id
               console.log("meta data", data)
-              if (!conversationId) {
-                navigate(`/${convo_id}`)
+              if (convo_id != null && (typeof convo_id === "string" || typeof convo_id === "number")) {
+                currentConvoId = convo_id.toString();
+                if (!conversationId) {
+                  navigate(`/${convo_id}`)
+                }
               }
             }
 
@@ -131,9 +127,11 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
               }
               setStatus(data.data.error || "");
             }
-            if (data.type === "title" && conversationId) {
-              updateConversationTitle(parseInt(conversationId), data.data)
-
+            if (data.type === "title" && currentConvoId) {
+              const parsedId = parseInt(currentConvoId);
+              if (!Number.isNaN(parsedId)) {
+                updateConversationTitle(parsedId, data.data)
+              }
             }
           }
         }
@@ -195,31 +193,39 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
 
 
         <CardContent className="p-4 overflow-auto">
-          <h2 className="text-lg font-semibold mb-3">Live Data</h2>
-          <table className="w-full text-sm border">
-            <thead>
-              <tr className="border-b">
-                {columns.map((col) => (
-                  <th key={col} className="text-left p-2">
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            <tbody>
-              {Array.isArray(tableData) &&
-                tableData.map((row, i) => (
-                  <tr key={i} className="border-b">
-                    {columns.map((col) => (
-                      <td key={col} className="p-2">
-                        {String(row[col] ?? "")}
-                      </td>
-                    ))}
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Live Data</h2>
+          <div className="rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                  {columns.map((col) => (
+                    <th key={col} className="h-10 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.isArray(tableData) && tableData.length > 0 ? (
+                  tableData.map((row, i) => (
+                    <tr key={i} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                      {columns.map((col) => (
+                        <td key={col} className="p-4 align-middle whitespace-nowrap">
+                          {String(row[col] ?? "")}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={columns.length || 1} className="h-24 text-center align-middle text-muted-foreground">
+                      No data.
+                    </td>
                   </tr>
-                ))}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
     </div>
