@@ -1,4 +1,4 @@
-from .views import StreamChatView, ConversationViewsSet
+from .views import StreamChatView, ConversationViewsSet, ReportView
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
@@ -11,6 +11,7 @@ conversation_router.register(
 urlpatterns = [
     path("chat/", StreamChatView.as_view()),  # no ID
     path("chat/<conversation_id>", StreamChatView.as_view()),
+    path("report/<report_id>/<page_no>", ReportView.as_view()),
 ]
 
 urlpatterns += conversation_router.urls

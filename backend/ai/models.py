@@ -1,6 +1,7 @@
 from django.db import models
 from pgvector.django import VectorField
 from django.conf import settings
+from sqlalchemy.sql.functions import mode
 
 
 class Embedding(models.Model):
@@ -43,3 +44,12 @@ class Message(models.Model):
         super().save(*args, **kwargs)
         self.conversation.updated_at = self.created_at
         self.conversation.save(update_fields=["updated_at"])
+
+
+class Report(models.Model):
+    title = models.CharField(max_length=255, default="New Report")
+    sql_query = models.CharField(max_length=255)
+    conversation = models.ForeignKey(
+        Conversation, models.CASCADE, blank=True, null=True, related_name="reports"
+    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

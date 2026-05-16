@@ -1,11 +1,11 @@
 from rest_framework.serializers import Serializer
-from ai.models import Conversation
+from ai.models import Conversation, Report
 from ai.serializers import (
     ConversationSerializer,
     ConversationDetailSerializer,
     ChatMessageInputSerializer,
 )
-from .services import ChatService
+from .services import ChatService, ReportGenerationService
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from django.http import StreamingHttpResponse
@@ -51,7 +51,9 @@ class StreamChatView(APIView):
         serializer = ChatMessageInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         message = serializer.validated_data
-        convo = Conversation.objects.filter(id=conversation_id,user=request.user).first()
+        convo = Conversation.objects.filter(
+            id=conversation_id, user=request.user
+        ).first()
         if not convo:
             convo = Conversation.objects.create(user=request.user)
 
@@ -74,7 +76,7 @@ class StreamChatView(APIView):
         messages = list(
             conversation.messages.order_by("created_at").values("role", "content")
         )
-        gen = self.stream(messages)
+        gen = self.stream(messages, conversation_id)
         final_message = None
 
         try:
@@ -112,8 +114,8 @@ class StreamChatView(APIView):
 
             yield self.service._event("title", data=title)
 
-    def stream(self, messages):
-        yield from self.service.stream_messages(messages)
+    def stream(self, messages, conversation_id):
+        yield from self.service.stream_messages(messages, conversation_id)
 
 
 class ConversationViewsSet(ModelViewSet):
@@ -132,7 +134,9 @@ class ConversationViewsSet(ModelViewSet):
         return self.serializer_action_classes.get(self.action, ConversationSerializer)
 
     def get_queryset(self):
-        return Conversation.objects.filter(user=self.request.user).order_by('-updated_at','-id')
+        return Conversation.objects.filter(user=self.request.user).order_by(
+            "-updated_at", "-id"
+        )
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -148,3 +152,17 @@ class ConversationViewsSet(ModelViewSet):
         title = self.service.get_conversation_title(messages)
 
         return Response({"title": title})
+
+
+class ReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def dispatch(self, request, *args, **kwargs):
+        self.report_service = ReportGenerationService()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, report_id, page_no):
+        report = get_object_or_404(Report, id=report_id)
+        sql = report.sql_query
+        data = self.report_service.get_report(sql, page_no)
+        return Response(data)

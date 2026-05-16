@@ -19,8 +19,9 @@ from ai.handlers.open_router_handler import OpenRouterHandler
 from db import DbEngine
 import logging
 from typing import Dict, Tuple
-
+from django.conf import settings
 from ai.report_engine import vector_store
+from rest_framework.settings import api_settings
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +111,21 @@ class ReportEngine:
     def run_sql(self, sql) -> Dict:
         data, is_success, reason = self.query_exector.execute_query(
             sql
+        )  # also does validation
+        return {
+            "data": data,
+            "error": reason,
+            "status": "Success" if is_success else "Error",
+        }
+
+    def run_sql_with_pagination(self, sql, page_no) -> Dict:
+        if not api_settings.PAGE_SIZE or type(api_settings.PAGE_SIZE) is not int:
+            raise Exception("DRF Setting not found for page size not found")
+        items_per_page = api_settings.PAGE_SIZE
+        page_no = int(page_no)
+        offset = (page_no - 1) * items_per_page
+        data, is_success, reason = self.query_exector.execute_query_with_pagination(
+            sql, items_per_page, offset
         )  # also does validation
         return {
             "data": data,

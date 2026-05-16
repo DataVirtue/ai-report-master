@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { type Message, get_conversation } from "@/lib/chat";
+import { type Message, get_conversation, get_report_data } from "@/lib/chat";
 import { useAuth } from "@/context/AuthContext"
 type TableRow = Record<string, any>;
 import { useParams, useNavigate } from 'react-router-dom';
@@ -36,12 +36,19 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
       const data = await get_conversation(token, conversationId)
       console.log("fetched full convo data", data)
       const messages = data.messages
+      const reportId = data.report_id
+      if (reportId) {
+        console.log(reportId)
+        const reportData = await get_report_data(token, reportId, "1")
+        setTableData(reportData['data'])
+      }
       setMessages([...messages])
 
     }
     getConvoWrapper();
 
   }, [conversationId])
+
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -122,8 +129,12 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
 
             // 🔹 TABLE DATA / ERROR
             if (data.type === "data") {
-              if (Array.isArray(data.data.rows)) {
-                setTableData(data.data.rows);
+              console.log("REPort DAta event", data)
+              const newReportId = data?.data?.report_id;
+              if (newReportId) {
+                console.log("New Report Id", newReportId)
+                const reportData = await get_report_data(token, `${newReportId}`, "1")
+                setTableData(reportData['data'])
               }
               setStatus(data.data.error || "");
             }
