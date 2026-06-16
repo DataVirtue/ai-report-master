@@ -53,3 +53,16 @@ class Report(models.Model):
         Conversation, models.CASCADE, blank=True, null=True, related_name="reports"
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+
+class SavedReport(models.Model):
+    title = models.CharField(max_length=255, default="New Saved Report")
+    sql_query = models.CharField(max_length=255)
+    conversation = models.ForeignKey(
+        Conversation,
+        models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="saved_reports",
+    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

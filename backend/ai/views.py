@@ -1,14 +1,17 @@
+from requests import request
 from rest_framework.serializers import Serializer
-from ai.models import Conversation, Report
+from ai.models import Conversation, Report, SavedReport
 from ai.serializers import (
     ConversationSerializer,
     ConversationDetailSerializer,
     ChatMessageInputSerializer,
+    SavedReportSerializer,
 )
 from .services import ChatService, ReportGenerationService
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
-from django.http import StreamingHttpResponse
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework import mixins
+from django.http import StreamingHttpResponse, response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer
 import logging
@@ -166,3 +169,49 @@ class ReportView(APIView):
         sql = report.sql_query
         data = self.report_service.get_report(sql, page_no)
         return Response(data)
+
+
+class SavedReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def dispatch(self, request, *args, **kwargs):
+        self.report_service = ReportGenerationService()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, report_id, page_no):
+        report = get_object_or_404(SavedReport, id=report_id)
+        sql = report.sql_query
+        data = self.report_service.get_report(sql, page_no)
+        return Response(data)
+
+
+class SavedReportCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, report_id):
+        title = request.data.get("title")
+        report = get_object_or_404(Report, id=report_id)
+        saved_report = SavedReport.objects.create(
+            title=title if title else report.title,
+            sql_query=report.sql_query,
+            conversation=report.conversation,
+            user=request.user,
+        )
+
+        return Response({"id": saved_report.id}, status=201)
+
+class SavedReportViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SavedReportSerializer
+
+    def get_queryset(self):
+        return SavedReport.objects.filter(user=self.request.user).order_by("-id")

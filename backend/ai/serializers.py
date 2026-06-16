@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ai.models import Conversation, Message
+from ai.models import Conversation, Message, SavedReport
 
 
 class ChatMessageInputSerializer(serializers.Serializer):
@@ -30,3 +30,13 @@ class ConversationDetailSerializer(ConversationSerializer):
         if obj.reports.first():
             return obj.reports.first().id
         return None
+
+
+class SavedReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SavedReport
+        fields = [
+            "id",
+            "title",
+        ]
+        read_only_fields = ["id"]
