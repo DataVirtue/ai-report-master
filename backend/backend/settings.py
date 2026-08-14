@@ -29,9 +29,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = [
-    os.getenv("ALLOWED_HOST"),
-]
+ALLOWED_HOSTS = [os.getenv("ALLOWED_HOST"), "localhost", "127.0.0.1"]
 
 # Logging config
 
@@ -162,7 +160,7 @@ if FRONTEND_URL:
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 
@@ -184,3 +182,11 @@ SOURCE_DB_PASSWORD = os.getenv("SOURCE_DB_PASSWORD")
 SOURCE_DB_HOST = os.getenv("SOURCE_DB_HOST")
 SOURCE_DB_PORT = os.getenv("SOURCE_DB_PORT")
 SOURCE_DB_TYPE = os.getenv("SOURCE_DB_TYPE")
+
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "Asia/Kolkata"

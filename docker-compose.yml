@@ -1,5 +1,37 @@
 
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    env_file:
+      - .env
+    volumes:
+      - redis_data:/data
+
+  celery:
+    build: ./backend
+    container_name: celery
+    command: celery -A backend worker -l info
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - backend
+
+  celery-beat:
+    build: ./backend
+    container_name: celery-beat
+    command: celery -A backend beat -l info
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - backend
+
   backend:
     build: ./backend
     ports:
@@ -27,4 +59,5 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
 
