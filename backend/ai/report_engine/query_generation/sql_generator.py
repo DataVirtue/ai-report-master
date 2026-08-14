@@ -40,7 +40,13 @@ class SqlGenerator:
             Step 4: Aggregation rules
             - If multiple fact tables are used, aggregate them separately before joining
 
-            Step 5: Generate SQL
+            Step 5: Ordering rules
+            - ALWAYS end the query with an ORDER BY that yields a deterministic,
+              stable row order, because results are paginated with LIMIT/OFFSET.
+            - Include a unique tiebreaker column (such as the primary key) as the
+              last ORDER BY term so pages never overlap or skip rows.
+
+            Step 6: Generate SQL
 
             Return output in this format:
 

@@ -148,6 +148,7 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
               const newReportId = data?.data?.report_id;
               if (newReportId) {
                 console.log("New Report Id", newReportId)
+                setCurrentReportId(`${newReportId}`)
                 const reportData = await get_report_data(token, `${newReportId}`, "1")
                 setTableData(reportData['data'])
               }
