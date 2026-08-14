@@ -150,6 +150,7 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
                 console.log("New Report Id", newReportId)
                 const reportData = await get_report_data(token, `${newReportId}`, "1")
                 setTableData(reportData['data'])
+                setCurrentReportId(`${newReportId}`)
               }
               setStatus(data.data.error || "");
             }

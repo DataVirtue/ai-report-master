@@ -48,7 +48,7 @@ class Message(models.Model):
 
 class Report(models.Model):
     title = models.CharField(max_length=255, default="New Report")
-    sql_query = models.CharField(max_length=255)
+    sql_query = models.TextField()
     conversation = models.ForeignKey(
         Conversation, models.CASCADE, blank=True, null=True, related_name="reports"
     )
@@ -57,7 +57,7 @@ class Report(models.Model):
 
 class SavedReport(models.Model):
     title = models.CharField(max_length=255, default="New Saved Report")
-    sql_query = models.CharField(max_length=255)
+    sql_query = models.TextField()
     conversation = models.ForeignKey(
         Conversation,
         models.CASCADE,
