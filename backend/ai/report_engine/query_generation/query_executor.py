@@ -20,7 +20,7 @@ class QueryExecutor:
                 keys = list(result_proxy.keys())
                 results = result_proxy.fetchall()
                 # An empty result set is a valid, successful query, not an error.
-                data = [dict(zip(keys, row)) for row in results]
+                data = [dict(zip(keys, row, strict=False)) for row in results]
                 return data, True, ""
 
             except DBAPIError as e:
@@ -34,11 +34,18 @@ class QueryExecutor:
         if not is_valid:
             return [], False, reason
 
+        # Guard against invalid pagination bounds (e.g. page_no <= 0 upstream
+        # produces a negative offset, which Postgres rejects outright).
+        if items_per_page <= 0 or offset < 0:
+            return [], False, "Pagination bounds are invalid"
+
         # The stored query has no LIMIT/OFFSET of its own, so wrap it as a
         # subquery and apply pagination to it. Without this wrapper the bound
         # params are never referenced and every page returns the full result.
+        # inner_query is app-generated SQL already restricted to SELECT by the
+        # validator above, so the composed statement is not user-tainted.
         inner_query = query.strip().rstrip(";")
-        paginated_query = (
+        paginated_query = (  # noqa: S608 - inner_query is validated, select-only app SQL
             f"SELECT * FROM ({inner_query}) AS paginated_subquery "
             "LIMIT :limit OFFSET :offset"
         )
@@ -52,7 +59,7 @@ class QueryExecutor:
                 keys = list(result_proxy.keys())
                 results = result_proxy.fetchall()
                 # An empty page is a valid, successful query, not an error.
-                data = [dict(zip(keys, row)) for row in results]
+                data = [dict(zip(keys, row, strict=False)) for row in results]
                 return data, True, ""
 
             except DBAPIError as e:
