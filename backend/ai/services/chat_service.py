@@ -5,43 +5,12 @@ from ai.agents import SQLAgent
 import json
 from decimal import Decimal
 import datetime
-from ai.models import Message,Conversation
+from ai.models import Message, Conversation, Report
 from django.db import transaction
 from django.db.models import Max
 
 
 class ChatService:
-    # system_prompt = """
-    # You are an AI reporting assistant that helps users generate reports from a database.
-    #
-    # The user is non-technical. Always keep explanations simple and clear.
-    #
-    # You have access to the following tools:
-    # 1. get_schema_context → to discover relevant tables and columns
-    # 2. run_sql → to execute SQL queries and retrieve data
-    #
-    # WORKFLOW:
-    # 1. Understand the user request
-    # 2. If requirements are unclear → ask clarifying questions
-    # 3. Use get_schema_context to find relevant tables
-    # 4. Generate a correct SQL query
-    # 5. Call run_sql to execute the query
-    # 6. Once results are available:
-    # - Summarize insights clearly
-    # - Do NOT include raw data in your response
-    # - Focus on key findings
-    #
-    # IMPORTANT RULES:
-    # - NEVER assume table or column names → always use get_schema_context first
-    # - ALWAYS use tools for database-related questions
-    # - NEVER generate fake data
-    # - Keep SQL efficient (use LIMIT if needed)
-    # - If SQL fails, fix and retry
-    #
-    # RESPONSE STYLE:
-    # - Clear, concise, non-technical
-    # - Explain what the data means, not how SQL works
-    # """
     system_prompt = """
     You are an AI reporting assistant that helps users generate reports from a database.
 
@@ -123,14 +92,30 @@ class ChatService:
 
         return text.strip()
 
+    def create_or_replace_report(self, conversation_id, sql):
+        conversation = Conversation.objects.filter(id=conversation_id).first()
+        report = Report.objects.filter(conversation_id=conversation_id).first()
+        if report:
+            report.sql_query = sql
+        else:
+            report = Report.objects.create(
+                title="New Report",
+                conversation_id=conversation_id,
+                user=conversation.user,
+                sql_query=sql,
+            )
+        report.save()
+        return report.id
+
     def create_message(self, conversation, role, content):
         with transaction.atomic():
             conversation = Conversation.objects.select_for_update().get(
                 pk=conversation.pk
             )
             last = (
-                Message.objects.filter(conversation=conversation)
-                .aggregate(Max("order"))["order__max"]
+                Message.objects.filter(conversation=conversation).aggregate(
+                    Max("order")
+                )["order__max"]
                 or 0
             )
 
@@ -150,7 +135,7 @@ class ChatService:
     def _event(self, type_, data):
         return f"data: {json.dumps({'type': type_, 'data': data}, default=self.custom_json_serializer)}\n\n"
 
-    def stream_messages(self, messages):
+    def stream_messages(self, messages, conversation_id):
         messages.append({"role": "system", "content": self.system_prompt})
 
         yield self._event("status", "Understanding request...")
@@ -196,16 +181,22 @@ class ChatService:
                             yield self._event(
                                 "data",
                                 {
-                                    "rows": [],
+                                    "report_id": None,
                                     "error": tool_result["error"],
                                 },
                             )
                         elif isinstance(tool_result, dict):
                             sql_success = True
+                            sql = json.loads(call["function"]["arguments"])
+                            query = sql.get("sql")
+                            print("toll call sql", query)
+                            report_id = self.create_or_replace_report(
+                                conversation_id, query
+                            )
                             yield self._event(
                                 "data",
                                 {
-                                    "rows": tool_result.get("data"),
+                                    "report_id": report_id,
                                     "error": None,
                                 },
                             )
@@ -247,7 +238,9 @@ class ChatService:
                 # Call LLM again with tool results
                 try:
                     response = self.handler.get_response_with_message_list(
-                        messages, self.model, tools=self.tools if not sql_success else []
+                        messages,
+                        self.model,
+                        tools=self.tools if not sql_success else [],
                     )
                 except OpenRouterError as e:
                     error_msg = f"Sorry, the AI service encountered an error: {str(e)}"

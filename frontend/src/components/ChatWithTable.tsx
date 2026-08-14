@@ -3,7 +3,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { type Message, get_conversation } from "@/lib/chat";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { type Message, get_conversation, get_report_data, save_report } from "@/lib/chat";
 import { useAuth } from "@/context/AuthContext"
 type TableRow = Record<string, any>;
 import { useParams, useNavigate } from 'react-router-dom';
@@ -19,8 +28,13 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [tableData, setTableData] = useState<TableRow[]>([]);
+  const [currentReportId, setCurrentReportId] = useState<string>("")
   const [status, setStatus] = useState<string>("");
+  const [reportTitle, setReportTitle] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { conversationId } = useParams();
+
+
   console.log(conversationId)
   useEffect(() => {
     console.log("running convo use effect")
@@ -36,12 +50,20 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
       const data = await get_conversation(token, conversationId)
       console.log("fetched full convo data", data)
       const messages = data.messages
+      const reportId = data.report_id
+      if (reportId) {
+        console.log(reportId)
+        const reportData = await get_report_data(token, reportId, "1")
+        setTableData(reportData['data'])
+        setCurrentReportId(reportId)
+      }
       setMessages([...messages])
 
     }
     getConvoWrapper();
 
   }, [conversationId])
+
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -122,8 +144,12 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
 
             // 🔹 TABLE DATA / ERROR
             if (data.type === "data") {
-              if (Array.isArray(data.data.rows)) {
-                setTableData(data.data.rows);
+              console.log("REPort DAta event", data)
+              const newReportId = data?.data?.report_id;
+              if (newReportId) {
+                console.log("New Report Id", newReportId)
+                const reportData = await get_report_data(token, `${newReportId}`, "1")
+                setTableData(reportData['data'])
               }
               setStatus(data.data.error || "");
             }
@@ -193,7 +219,50 @@ export default function ChatWithTable({ updateConversationTitle }: Props) {
 
 
         <CardContent className="p-4 overflow-auto">
-          <h2 className="text-lg font-semibold tracking-tight mb-4">Live Data</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold tracking-tight">Live Data</h2>
+            {currentReportId && (
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="default">Save Report</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Save Report</DialogTitle>
+                    <DialogDescription>
+                      Enter a title for your report to save it.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label htmlFor="title" className="text-right text-sm font-medium">
+                        Title
+                      </label>
+                      <Input
+                        id="title"
+                        value={reportTitle}
+                        onChange={(e) => setReportTitle(e.target.value)}
+                        className="col-span-3"
+                        placeholder="My Awesome Report"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      onClick={async () => {
+                        await save_report(token ? token : "", currentReportId, reportTitle);
+                        setIsDialogOpen(false);
+                        setReportTitle("");
+                      }}
+                    >
+                      Save
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
           <div className="rounded-md border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">

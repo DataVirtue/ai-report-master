@@ -5,5 +5,5 @@ class ReportGenerationService:
     def __init__(self) -> None:
         self.report_engine = get_engine()
 
-    def get_report(self, query):
-        return self.report_engine.get_report_data(query, top_k=10)
+    def get_report(self, query, page_no):
+        return self.report_engine.run_sql_with_pagination(query, page_no)
