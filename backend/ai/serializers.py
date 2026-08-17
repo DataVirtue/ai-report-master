@@ -40,3 +40,34 @@ class SavedReportSerializer(serializers.ModelSerializer):
             "title",
         ]
         read_only_fields = ["id"]
+
+
+class ReportNotificationSetupRequestSerializer(serializers.Serializer):
+    to_email = serializers.EmailField()
+    report_id = serializers.IntegerField()
+    subject = serializers.CharField(max_length=255)
+    message = serializers.CharField(max_length=1000)
+    hr = serializers.IntegerField()
+    min = serializers.IntegerField()
+    day = serializers.IntegerField()
+    task_name = serializers.CharField(max_length=100)
+
+    def validate_hr(self, value):
+        if value > 23 or value < 0:
+            raise serializers.ValidationError("Invalid Hours Value")
+        return value
+
+    def validate_min(self, value):
+        if value > 59 or value < 0:
+            raise serializers.ValidationError("Invalid Min Value")
+        return value
+
+    def validate_day(self, value):
+        if value > 6 or value < 0:
+            raise serializers.ValidationError("Invalid Day Value")
+        return value
+
+    def validate_report_id(self, value):
+        if not SavedReport.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Report Id does not exists")
+        return value

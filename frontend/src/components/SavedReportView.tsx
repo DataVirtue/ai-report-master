@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { get_saved_report_data, get_saved_report_details, update_saved_report_title, type SavedReport } from "@/lib/chat";
 import { Pencil, Check, X } from "lucide-react";
+import ScheduleReportDialog from "@/components/ScheduleReportDialog";
 
 type TableRow = Record<string, any>;
 
@@ -125,8 +126,14 @@ export default function SavedReportView({ savedReports = [], onUpdateReportTitle
                 </button>
               </div>
             )}
+
+            {reportId && !isEditingTitle && (
+              <div className="ml-auto">
+                <ScheduleReportDialog reportId={parseInt(reportId, 10)} reportTitle={title} />
+              </div>
+            )}
           </div>
-          
+
           {isLoading ? (
             <div className="text-sm text-muted-foreground">Loading report...</div>
           ) : error ? (

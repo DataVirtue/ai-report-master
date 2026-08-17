@@ -6,6 +6,7 @@ from .views import (
     ConversationViewsSet,
     ReportView,
     SavedReportViewSet,
+    EmailNotificationView,
 )
 from django.urls import path
 from rest_framework.routers import DefaultRouter
@@ -27,6 +28,7 @@ urlpatterns = [
     path("report/<report_id>/<page_no>", ReportView.as_view()),
     path("saved-report/<report_id>/<page_no>", SavedReportView.as_view()),
     path("report/save/<report_id>/", SavedReportCreateView.as_view()),
+    path("report/schedule/", EmailNotificationView.as_view()),
 ]
 
 urlpatterns += conversation_router.urls
