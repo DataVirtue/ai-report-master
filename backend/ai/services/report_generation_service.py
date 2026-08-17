@@ -13,8 +13,8 @@ class ReportGenerationService:
     def get_report_csv(self, query):
         res = self.report_engine.run_sql(query)
         data = res.get("data")
-        is_success = res.get("status")
+        status = res.get("status")
         reason = res.get("error")
-        if not is_success:
+        if status == "Error":
             raise ValueError(reason)
         return self.report_writer.generate_csv_file(data=data)

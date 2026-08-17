@@ -53,17 +53,17 @@ class ReportNotificationSetupRequestSerializer(serializers.Serializer):
     task_name = serializers.CharField(max_length=100)
 
     def validate_hr(self, value):
-        if value > 24 or value < 0:
+        if value > 23 or value < 0:
             raise serializers.ValidationError("Invalid Hours Value")
         return value
 
     def validate_min(self, value):
-        if value > 60 or value < 0:
+        if value > 59 or value < 0:
             raise serializers.ValidationError("Invalid Min Value")
         return value
 
     def validate_day(self, value):
-        if value > 7 or value < 1:
+        if value > 6 or value < 0:
             raise serializers.ValidationError("Invalid Day Value")
         return value
 

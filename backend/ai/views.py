@@ -2,6 +2,7 @@ from email.mime import message
 from requests import request
 from rest_framework.serializers import Serializer
 from rest_framework import serializers
+from sqlalchemy.sql.functions import user
 from ai.models import Conversation, Report, SavedReport
 from ai.serializers import (
     ConversationSerializer,
@@ -234,7 +235,9 @@ class EmailNotificationView(APIView):
         serializer.is_valid(raise_exception=True)
 
         validated_data = serializer.validated_data
-        report = SavedReport.objects.filter(id=validated_data.get("report_id")).first()
+        report = SavedReport.objects.filter(
+            id=validated_data.get("report_id"), user=request.user
+        ).first()
 
         self.notification_service.schedule_report(
             hour=validated_data.get("hr"),

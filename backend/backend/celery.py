@@ -17,16 +17,20 @@ app.autodiscover_tasks()
 
 
 @app.task(bind=True, ignore_result=True)
-def send_report_email(self, to_email_id, subject, message,filename,report_query,mimetype):
+def send_report_email(
+    self, to_email_id, subject, message, filename, report_query, mimetype
+):
     from ai.services.email_service import EmailService
     from ai.services.report_generation_service import ReportGenerationService
+
     generator = ReportGenerationService()
     service = EmailService()
     try:
         file = generator.get_report_csv(report_query)
-        service.send_email([to_email_id], subject, message, file,filename,mimetype)
+        service.send_email([to_email_id], subject, message, file, filename, mimetype)
     except Exception as e:
         print(f"Could Not send an email, Following exception occured {e}")
+        raise Exception(e)
 
 
 @app.task(bind=True, ignore_result=True)
