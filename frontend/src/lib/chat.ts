@@ -164,6 +164,41 @@ export async function delete_saved_report(token: string, report_id: string) {
   }
 }
 
+export type ScheduleNotificationPayload = {
+  to_email: string;
+  report_id: number;
+  subject: string;
+  message: string;
+  hr: number;
+  min: number;
+  day: number; // 1 = Monday ... 7 = Sunday
+  task_name: string; // unique identifier for the scheduled task
+};
+
+export async function schedule_report_notification(token: string, payload: ScheduleNotificationPayload) {
+  const res = await fetch(API_BASE_URL + "/api/ai/report/schedule/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    let detail = `Failed to schedule notification: ${res.status}`;
+    try {
+      const errData = await res.json();
+      // DRF returns field errors as { field: [msg] } or { detail: msg }
+      const firstError = errData?.detail ?? Object.values(errData)?.[0];
+      if (firstError) detail = Array.isArray(firstError) ? firstError[0] : String(firstError);
+    } catch {
+      // response had no JSON body; keep the status-based message
+    }
+    throw new Error(detail)
+  }
+  return await res.json()
+}
+
 export async function update_saved_report_title(token: string, report_id: string, title: string) {
   const res = await fetch(API_BASE_URL + "/api/ai/saved-reports/" + report_id + "/", {
     method: "PATCH",

@@ -10,6 +10,17 @@ services:
   db:
     networks:
       - mynet
+  celery:
+    networks:
+      - mynet
+
+  redis:
+    networks:
+      - mynet
+
+  celery-beat:
+    networks:
+      - mynet
 
 networks:
   mynet:

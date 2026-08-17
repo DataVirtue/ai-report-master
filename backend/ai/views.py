@@ -1,13 +1,16 @@
+from email.mime import message
 from requests import request
 from rest_framework.serializers import Serializer
+from rest_framework import serializers
 from ai.models import Conversation, Report, SavedReport
 from ai.serializers import (
     ConversationSerializer,
     ConversationDetailSerializer,
     ChatMessageInputSerializer,
     SavedReportSerializer,
+    ReportNotificationSetupRequestSerializer,
 )
-from .services import ChatService, ReportGenerationService
+from .services import ChatService, ReportGenerationService, ReportNotificationService
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework import mixins
@@ -203,6 +206,7 @@ class SavedReportCreateView(APIView):
 
         return Response({"id": saved_report.id}, status=201)
 
+
 class SavedReportViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -215,3 +219,33 @@ class SavedReportViewSet(
 
     def get_queryset(self):
         return SavedReport.objects.filter(user=self.request.user).order_by("-id")
+
+
+class EmailNotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def dispatch(self, request, *args, **kwargs):
+        self.notification_service = ReportNotificationService()
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        serializer = ReportNotificationSetupRequestSerializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        validated_data = serializer.validated_data
+        report = SavedReport.objects.filter(id=validated_data.get("report_id")).first()
+
+        self.notification_service.schedule_report(
+            hour=validated_data.get("hr"),
+            min=validated_data.get("min"),
+            task_name=validated_data.get("task_name"),
+            day=validated_data.get("day"),
+            to_email_id=validated_data.get("to_email"),
+            subject=validated_data.get("subject"),
+            message=validated_data.get("message"),
+            report_query=report.sql_query,
+            filename=report.title,
+            mimetype="text/csv",
+        )
+        return Response({"message": "Report Scheduled Successfullly"}, status=201)
